@@ -16,6 +16,7 @@ embeddings = init_embeddings(
     base_url=settings.embeddings_base_url,
     provider=settings.model_provider,
     api_key=settings.api_key,
+    check_embedding_ctx_length=False,
 )
 
 
