@@ -6,6 +6,16 @@ from langchain_core.tools import tool
 from loguru import logger
 
 tavily = TavilySearchResults(
+    name="web_search",
+    description=(
+        "Search the public web for current and external information. "
+        "Use this tool when the user's question requires up-to-date information. "
+        "For time-sensitive queries such as latest, recent, today, current, "
+        "this year, 最新, 最近, 今天, 当前, or 今年, "
+        "construct the search query according to the current date and year "
+        "provided in the system prompt. "
+        "Never guess or reuse an outdated year from model knowledge."
+    ),
     tavily_api_key=settings.tavily_api_key,
     max_results=3,
     include_answer=False,

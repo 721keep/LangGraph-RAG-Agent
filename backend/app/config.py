@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     model_provider: str
     model_names: list[str]
     model_base_url: str | None = None
+    app_timezone: str = "UTC"
     embeddings_model_name: str
     embeddings_base_url: str | None = None
     token_bearer_url: str

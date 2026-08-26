@@ -26,6 +26,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - APP_TIMEZONE=${APP_TIMEZONE:-UTC}
       - MODEL_PROVIDER=${MODEL_PROVIDER:-openai}
       - MODEL_NAMES=${MODEL_NAMES:-["gpt-4o", "gpt-4o-mini"]}
       - MODEL_BASE_URL=${MODEL_BASE_URL}
