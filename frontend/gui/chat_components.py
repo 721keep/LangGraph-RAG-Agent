@@ -70,8 +70,30 @@ def authenticated_user_chat_interface_component():
 
                             elif event_type == "tool_result":
                                 with steps_container:
-                                    with st.expander(f"**Tool Result:** `{event['name']}`", expanded=False):
-                                        st.code(event["content"], language="json")
+                                    if event["name"] == "retrieve_user_documents":
+                                        rendered = _render_retrieval_result(
+                                            event["content"]
+                                        )
+
+                                        if not rendered:
+                                            with st.expander(
+                                                "**Tool Result:** `retrieve_user_documents`",
+                                                expanded=False,
+                                            ):
+                                                st.code(
+                                                    event["content"],
+                                                    language="json",
+                                                )
+
+                                    else:
+                                        with st.expander(
+                                            f"**Tool Result:** `{event['name']}`",
+                                            expanded=False,
+                                        ):
+                                            st.code(
+                                                event["content"],
+                                                language="json",
+                                            )
 
                             elif event_type == "llm_chunk":
                                 full_response += event.get("content", "")
@@ -99,6 +121,89 @@ def authenticated_user_chat_interface_component():
             with st.spinner("Generating response..."):
                 asyncio.run(fetch_stream())
 
+def _render_retrieval_result(content: str) -> bool:
+    """Render structured RAG retrieval results as observable source cards."""
+
+    try:
+        retrieval_data = json.loads(content)
+    except (json.JSONDecodeError, TypeError):
+        return False
+
+    if not isinstance(retrieval_data, dict) or "sources" not in retrieval_data:
+        return False
+
+    sources = retrieval_data.get("sources", [])
+    query = retrieval_data.get("query")
+    top_k = retrieval_data.get("top_k")
+    retrieved_count = retrieval_data.get("retrieved_count", len(sources))
+
+    st.markdown(f"**🔎 Retrieved Sources:** {retrieved_count} chunk(s)")
+
+    summary_parts = []
+
+    if query:
+        summary_parts.append(f"Query: `{query}`")
+
+    if top_k is not None:
+        summary_parts.append(f"Top-K: `{top_k}`")
+
+    if summary_parts:
+        st.caption(" · ".join(summary_parts))
+
+    if not sources:
+        st.info("No relevant document chunks were retrieved.")
+        return True
+
+    for source in sources:
+        source_id = source.get("source_id", "?")
+        source_label = source.get(
+            "source_label",
+            f"[Source {source_id}]",
+        )
+
+        file_name = source.get("file_name", "Unknown file")
+        page = source.get("page")
+        chunk_index = source.get("chunk_index")
+        relevance_score = source.get("relevance_score")
+        retrieved_content = source.get("content", "")
+
+        try:
+            score_value = float(relevance_score)
+            score_text = f"{score_value:.3f}"
+        except (TypeError, ValueError):
+            score_value = None
+            score_text = "N/A"
+
+        expander_title = (
+            f"{source_label} · {file_name} · Relevance {score_text}"
+        )
+
+        with st.expander(expander_title, expanded=False):
+            metadata_parts = []
+
+            if page is not None:
+                metadata_parts.append(f"📄 Page: `{page}`")
+
+            if chunk_index is not None:
+                metadata_parts.append(f"🧩 Chunk: `{chunk_index}`")
+
+            metadata_parts.append(f"🏷️ Rank: `{source_id}`")
+
+            st.markdown(" · ".join(metadata_parts))
+
+            if score_value is not None:
+                st.caption(f"Relevance score: {score_value:.4f}")
+
+                normalized_score = max(
+                    0.0,
+                    min(1.0, score_value),
+                )
+                st.progress(normalized_score)
+
+            st.markdown("**Retrieved content**")
+            st.code(retrieved_content)
+
+    return True
 
 def unauthenticated_user_chat_interface_component():
     for message in st.session_state["thread"].messages:

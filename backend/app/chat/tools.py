@@ -1,3 +1,5 @@
+import json
+
 from app.config import settings
 from app.db.pgvector_utils import vector_store
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -26,33 +28,37 @@ tavily = TavilySearchResults(
 )
 
 
-def _format_retrieved_document(doc: Document, source_index: int) -> str:
-    """Format a retrieved document chunk with citation metadata."""
+def _build_retrieved_source(
+    doc: Document,
+    source_index: int,
+    relevance_score: float,
+) -> dict:
+    """Build a structured retrieval source for citation and observability."""
 
     metadata = doc.metadata
 
     file_name = metadata.get("file_name", "Unknown file")
     chunk_index = metadata.get("chunk_index")
+
     page_label = metadata.get("page_label")
     page = metadata.get("page")
 
-    source_lines = [
-        f"[Source {source_index}]",
-        f"file_name: {file_name}",
-    ]
+    display_page = None
 
     if page_label is not None:
-        source_lines.append(f"page: {page_label}")
+        display_page = page_label
     elif isinstance(page, int):
-        source_lines.append(f"page: {page + 1}")
+        display_page = page + 1
 
-    if chunk_index is not None:
-        source_lines.append(f"chunk_index: {chunk_index}")
-
-    source_lines.append("content:")
-    source_lines.append(doc.page_content)
-
-    return "\n".join(source_lines)
+    return {
+        "source_id": source_index,
+        "source_label": f"[Source {source_index}]",
+        "file_name": file_name,
+        "page": display_page,
+        "chunk_index": chunk_index,
+        "relevance_score": round(float(relevance_score), 4),
+        "content": doc.page_content,
+    }
 
 
 @tool
@@ -60,8 +66,9 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     """
     Use this tool to answer questions about the user's uploaded documents.
     It automatically retrieves relevant document chunks for the current thread
-    and returns both their content and citation metadata.
+    and returns structured content, citation metadata, and relevance scores.
     """
+
     user_id = config["configurable"].get("user_id")  # type: ignore
     thread_id = config["configurable"].get("thread_id")  # type: ignore
 
@@ -69,24 +76,37 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         f"Retrieving documents for user_id: {user_id} and thread_id: {thread_id}"
     )
 
-    retriever = vector_store.as_retriever(
-        search_kwargs={
-            "k": 3,
-            "filter": {"thread_id": thread_id},
-        }
+    top_k = 3
+
+    results = await vector_store.asimilarity_search_with_relevance_scores(
+        query=query,
+        k=top_k,
+        filter={"thread_id": thread_id},
     )
 
-    result_docs = await retriever.ainvoke(query)
-
-    if not result_docs:
+    if not results:
         return "No relevant documents"
 
-    formatted_documents = [
-        _format_retrieved_document(doc, source_index)
-        for source_index, doc in enumerate(result_docs, start=1)
+    sources = [
+        _build_retrieved_source(
+            doc=doc,
+            source_index=source_index,
+            relevance_score=relevance_score,
+        )
+        for source_index, (doc, relevance_score) in enumerate(results, start=1)
     ]
 
-    return "\n\n".join(formatted_documents)
+    retrieval_result = {
+        "query": query,
+        "top_k": top_k,
+        "retrieved_count": len(sources),
+        "sources": sources,
+    }
+
+    return json.dumps(
+        retrieval_result,
+        ensure_ascii=False,
+    )
 
 
 tools = [retrieve_user_documents, tavily]
