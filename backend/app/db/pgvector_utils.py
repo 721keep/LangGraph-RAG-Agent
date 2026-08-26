@@ -69,12 +69,14 @@ async def index_document_to_pgvector(file_path: Path, document_id: UUID, thread_
 
     logger.info(f"Starting indexing for document: {file_path} with document_id: {document_id}")
     splits = await _load_and_split_documents(file_path)
-    for split in splits:
+
+    for chunk_index, split in enumerate(splits):
         split.metadata["id"] = str(uuid4())
         split.metadata["file_name"] = file_path.name
         split.metadata["document_id"] = str(document_id)
         split.metadata["thread_id"] = str(thread_id)
         split.metadata["user_id"] = str(user_id)
+        split.metadata["chunk_index"] = chunk_index
 
     try:
         doc_ids = await vector_store.aadd_documents(splits, ids=[split.metadata["id"] for split in splits])
