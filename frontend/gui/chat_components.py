@@ -56,10 +56,9 @@ def authenticated_user_chat_interface_component():
             async def fetch_stream():
                 nonlocal full_response
                 try:
-                    chat_data = {"prompt": text, "model_name": st.session_state["model_name"], "top_k": st.session_state.get("top_k", 3)}
-                    logger.info(
-                        f"Sending chat request with top_k={chat_data['top_k']}"
-                    )
+                    chat_data = {"prompt": text, "model_name": st.session_state["model_name"], "top_k": st.session_state.get("top_k", 3), "similarity_threshold": st.session_state.get(
+                        "similarity_threshold", 0.50
+                    )}
                     async for line in api_utils.chat_stream(chat_data, st.session_state["thread"].id):
                         try:
                             event: dict = json.loads(line)
@@ -138,9 +137,29 @@ def _render_retrieval_result(content: str) -> bool:
     sources = retrieval_data.get("sources", [])
     query = retrieval_data.get("query")
     top_k = retrieval_data.get("top_k")
-    retrieved_count = retrieval_data.get("retrieved_count", len(sources))
 
-    st.markdown(f"**🔎 Retrieved Sources:** {retrieved_count} chunk(s)")
+    # Similarity Threshold observability
+    similarity_threshold = retrieval_data.get("similarity_threshold")
+
+    retrieved_count = retrieval_data.get(
+        "retrieved_count",
+        len(sources),
+    )
+
+    # Backward-compatible fallbacks for old ToolMessages
+    candidate_count = retrieval_data.get(
+        "candidate_count",
+        retrieved_count,
+    )
+
+    filtered_count = retrieval_data.get(
+        "filtered_count",
+        max(candidate_count - retrieved_count, 0),
+    )
+
+    st.markdown(
+        f"**🔎 Retrieved Sources:** {retrieved_count} chunk(s)"
+    )
 
     summary_parts = []
 
@@ -150,11 +169,33 @@ def _render_retrieval_result(content: str) -> bool:
     if top_k is not None:
         summary_parts.append(f"Top-K: `{top_k}`")
 
+    if similarity_threshold is not None:
+        summary_parts.append(
+            f"Threshold: `{float(similarity_threshold):.2f}`"
+        )
+
     if summary_parts:
         st.caption(" · ".join(summary_parts))
 
+    # Retrieval filtering statistics
+    stats_parts = [
+        f"Candidates: `{candidate_count}`",
+        f"Passed: `{retrieved_count}`",
+        f"Filtered: `{filtered_count}`",
+    ]
+
+    st.caption(" · ".join(stats_parts))
+
     if not sources:
-        st.info("No relevant document chunks were retrieved.")
+        if similarity_threshold is not None:
+            st.info(
+                "No retrieved chunks passed the similarity threshold."
+            )
+        else:
+            st.info(
+                "No relevant document chunks were retrieved."
+            )
+
         return True
 
     for source in sources:
@@ -188,14 +229,20 @@ def _render_retrieval_result(content: str) -> bool:
                 metadata_parts.append(f"📄 Page: `{page}`")
 
             if chunk_index is not None:
-                metadata_parts.append(f"🧩 Chunk: `{chunk_index}`")
+                metadata_parts.append(
+                    f"🧩 Chunk: `{chunk_index}`"
+                )
 
-            metadata_parts.append(f"🏷️ Rank: `{source_id}`")
+            metadata_parts.append(
+                f"🏷️ Rank: `{source_id}`"
+            )
 
             st.markdown(" · ".join(metadata_parts))
 
             if score_value is not None:
-                st.caption(f"Relevance score: {score_value:.4f}")
+                st.caption(
+                    f"Relevance score: {score_value:.4f}"
+                )
 
                 normalized_score = max(
                     0.0,

@@ -23,7 +23,14 @@ async def chat_stream(thread_id: UUID, prompt_input: PromptInput, user_id: UUID)
     """
     Streams the agent's execution steps and final response.
     """
-    config = RunnableConfig(configurable={"thread_id": str(thread_id), "user_id": str(user_id), "top_k": prompt_input.top_k})
+    config = RunnableConfig(
+    configurable={
+        "thread_id": str(thread_id),
+        "user_id": str(user_id),
+        "top_k": prompt_input.top_k,
+        "similarity_threshold": prompt_input.similarity_threshold,
+    }
+    )
     checkpointer = await get_checkpointer()
     graph = build_retrival_graph(checkpointer, prompt_input.model_name)
 

@@ -53,6 +53,16 @@ def retrieval_settings_component():
         help="Maximum number of document chunks retrieved for each RAG query.",
     )
 
+    st.sidebar.slider(
+        "Similarity Threshold",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.50,
+        step=0.05,
+        key="similarity_threshold",
+        help="Minimum relevance score required for a retrieved chunk to be used.",
+    )
+
 def chat_history_component():
     st.sidebar.subheader("🗨️ Chat History", divider="rainbow")
     threads = st.session_state["user"].threads

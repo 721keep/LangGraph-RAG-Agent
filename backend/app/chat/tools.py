@@ -72,10 +72,13 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     user_id = config["configurable"].get("user_id")  # type: ignore
     thread_id = config["configurable"].get("thread_id")  # type: ignore
     top_k = config["configurable"].get("top_k", 3)  # type: ignore
-
+    similarity_threshold = config["configurable"].get(
+    "similarity_threshold", 0.50
+    )
     logger.info(
         f"Retrieving documents for user_id: {user_id}, "
-        f"thread_id: {thread_id}, top_k: {top_k}"
+        f"thread_id: {thread_id}, top_k: {top_k}, "
+        f"similarity_threshold: {similarity_threshold}"
     )
 
     results = await vector_store.asimilarity_search_with_relevance_scores(
@@ -83,9 +86,17 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         k=top_k,
         filter={"thread_id": thread_id},
     )
+    candidate_count = len(results)
 
-    if not results:
-        return "No relevant documents"
+    filtered_results = [
+        (doc, score)
+        for doc, score in results
+        if score >= similarity_threshold
+    ]
+
+    retrieved_count = len(filtered_results)
+    filtered_count = candidate_count - retrieved_count
+
 
     sources = [
         _build_retrieved_source(
@@ -93,13 +104,16 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
             source_index=source_index,
             relevance_score=relevance_score,
         )
-        for source_index, (doc, relevance_score) in enumerate(results, start=1)
+        for source_index, (doc, relevance_score) in enumerate(filtered_results, start=1)
     ]
 
     retrieval_result = {
         "query": query,
         "top_k": top_k,
-        "retrieved_count": len(sources),
+        "similarity_threshold": similarity_threshold,
+        "candidate_count": candidate_count,
+        "retrieved_count": retrieved_count,
+        "filtered_count": filtered_count,
         "sources": sources,
     }
 
