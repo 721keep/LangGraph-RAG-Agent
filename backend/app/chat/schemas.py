@@ -4,13 +4,13 @@ from typing import Any, AsyncGenerator, AsyncIterable
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
 from loguru import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PromptInput(BaseModel):
     prompt: str
     model_name: str
-
+    top_k: int = Field(default=3, ge=1, le=10)
 
 class Message(BaseModel):
     role: str

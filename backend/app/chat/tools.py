@@ -71,12 +71,12 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
 
     user_id = config["configurable"].get("user_id")  # type: ignore
     thread_id = config["configurable"].get("thread_id")  # type: ignore
+    top_k = config["configurable"].get("top_k", 3)  # type: ignore
 
     logger.info(
-        f"Retrieving documents for user_id: {user_id} and thread_id: {thread_id}"
+        f"Retrieving documents for user_id: {user_id}, "
+        f"thread_id: {thread_id}, top_k: {top_k}"
     )
-
-    top_k = 3
 
     results = await vector_store.asimilarity_search_with_relevance_scores(
         query=query,

@@ -9,6 +9,7 @@ def display_sidebar():
     if st.session_state["user"].is_authenticated:
         greeting_component()
         model_selection_component()
+        retrieval_settings_component()
         chat_history_component()
         document_list_component()
         logout_component()
@@ -41,6 +42,16 @@ def model_selection_component():
         label_visibility="collapsed",
     )
 
+def retrieval_settings_component():
+    st.sidebar.subheader("🔎 Retrieval Settings", divider="rainbow")
+
+    st.sidebar.select_slider(
+        "Top-K",
+        options=[1, 3, 5, 8, 10],
+        value=3,
+        key="top_k",
+        help="Maximum number of document chunks retrieved for each RAG query.",
+    )
 
 def chat_history_component():
     st.sidebar.subheader("🗨️ Chat History", divider="rainbow")

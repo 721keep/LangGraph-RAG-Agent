@@ -56,7 +56,10 @@ def authenticated_user_chat_interface_component():
             async def fetch_stream():
                 nonlocal full_response
                 try:
-                    chat_data = {"prompt": text, "model_name": st.session_state["model_name"]}
+                    chat_data = {"prompt": text, "model_name": st.session_state["model_name"], "top_k": st.session_state.get("top_k", 3)}
+                    logger.info(
+                        f"Sending chat request with top_k={chat_data['top_k']}"
+                    )
                     async for line in api_utils.chat_stream(chat_data, st.session_state["thread"].id):
                         try:
                             event: dict = json.loads(line)
