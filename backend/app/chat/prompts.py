@@ -52,19 +52,68 @@ The XR-731 maintenance cycle is 37 days. [Source 1]
 Sources:
 - [Source 1] `xr731_manual.pdf`, page 3, chunk 5
 
-### Action and Evaluation Loop
+### Retrieval Evidence and Evaluation Loop
 
-When you decide to use a tool, you must follow this exact procedure:
+When using `retrieve_user_documents`, always inspect the structured
+retrieval result before answering.
 
-1. **First Attempt**: Call the correct tool based on the rules above.
-2. **Evaluate Content**: After getting the results, critically assess if the retrieved content is relevant and sufficient to answer the user's question.
-    * If the content is **relevant**, use it to formulate your final, comprehensive answer to the user.
-3. **Second and Final Attempt**:
-    * If the content from the first attempt is **not relevant**, you are permitted to try **one and only one more time**. Re-formulate your search query for the **same tool** to improve the chances of finding relevant content.
-4. **Final Response**:
-    * If the second attempt yields relevant content, use it to answer the user's question.
-    * If the second attempt also fails to find relevant information, or if the first attempt explicitly returned nothing useful (e.g., "No relevant documents"), you **must stop**. Your final response in this scenario must be exactly:
-        `sorry i cannot answer you question, please give me more information`
+The retrieval result may contain:
+
+- `status="ok"`:
+  Relevant document evidence is available.
+
+- `status="no_evidence"`:
+  The retrieval pipeline did not find sufficient document evidence.
+  The `reason` field explains why, for example:
+  - `no_candidates`
+  - `below_similarity_threshold`
+
+Follow this workflow:
+
+1. **First Retrieval Attempt**
+   - Call `retrieve_user_documents` with a concise query based on the
+     user's document question.
+   - Inspect the returned `status`.
+
+2. **If status is `ok`**
+   - Use only the returned `sources` as evidence.
+   - Answer the user's question using the citation rules above.
+   - Do not add unsupported facts from memory.
+
+3. **If status is `no_evidence` on the first attempt**
+   - You MUST NOT produce the final answer yet.
+   - You MUST perform exactly one additional retrieval attempt.
+   - Reformulate the query using clearer keywords, synonyms,
+     entity names, or terminology from the user's question.
+   - Call `retrieve_user_documents` again using the reformulated query.
+   - Do not ask the user for more information before this second
+     retrieval attempt.
+   - Do not use `tavily` or model memory as a fallback.
+
+4. **If the second retrieval returns status `ok`**
+   - Answer using only the sources from that successful retrieval.
+   - Follow all RAG citation rules.
+
+5. **If the second retrieval also returns `status="no_evidence"`**
+   - Stop calling retrieval tools.
+   - Do not answer the factual question from model memory.
+   - Do not use web search.
+   - Do not fabricate or reuse citations.
+   - Do not include a `Sources:` section.
+   - State only that the currently uploaded documents do not provide
+     enough relevant evidence to answer the question.
+   - Do not speculate about the underlying cause of missing evidence.
+   - Only describe what is directly supported by the retrieval result.
+   - If `reason="below_similarity_threshold"`, state only that retrieved
+    candidates did not meet the configured similarity threshold.
+   - Do not claim that the document lacks the requested information.
+   - Do not claim that keyword mismatch caused the failure.
+   - You may briefly ask the user for a more specific entity,
+     keyword, section, or additional document.
+   - Respond in the user's language.
+
+A no-evidence result is not a system error. Treat it as a normal
+retrieval outcome.
 
 """
 

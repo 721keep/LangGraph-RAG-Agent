@@ -112,6 +112,16 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         candidate_count - threshold_passed_count
     )
 
+    status = "ok"
+    reason = None
+
+    if candidate_count == 0:
+        status = "no_evidence"
+        reason = "no_candidates"
+
+    elif threshold_passed_count == 0:
+        status = "no_evidence"
+        reason = "below_similarity_threshold"
     if filtered_results:
         rerank_results = await rerank_documents(
             query=query,
@@ -174,16 +184,23 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     filtered_count = candidate_count - retrieved_count
 
     retrieval_result = {
+        "status": status,
+        "reason": reason,
+
         "query": query,
         "top_k": top_k,
         "similarity_threshold": similarity_threshold,
+
         "candidate_count": candidate_count,
         "threshold_passed_count": threshold_passed_count,
         "threshold_filtered_count": threshold_filtered_count,
+
         "rerank_top_n": rerank_top_n,
         "reranked_count": reranked_count,
+
         "retrieved_count": retrieved_count,
         "filtered_count": filtered_count,
+
         "sources": sources,
     }
 
@@ -193,10 +210,13 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     )
 
     logger.info(
-        f"Retrieval result after reranking: "
-        f"retrieved_count={retrieved_count}, "
+        f"Retrieval result: "
+        f"status={status}, "
+        f"reason={reason}, "
+        f"candidate_count={candidate_count}, "
+        f"threshold_passed_count={threshold_passed_count}, "
         f"reranked_count={reranked_count}, "
-        f"sources_count={len(sources)}"
+        f"retrieved_count={retrieved_count}"
     )
 
     return serialized_result
