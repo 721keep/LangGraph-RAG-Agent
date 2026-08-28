@@ -10,11 +10,23 @@ from pydantic import BaseModel, Field
 class PromptInput(BaseModel):
     prompt: str
     model_name: str
-    top_k: int = Field(default=3, ge=1, le=10)
+
+    top_k: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+    )
+
     similarity_threshold: float = Field(
         default=0.50,
         ge=0.0,
         le=1.0,
+    )
+
+    rerank_top_n: int = Field(
+        default=3,
+        ge=1,
+        le=5,
     )
 
 class Message(BaseModel):

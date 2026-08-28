@@ -63,6 +63,14 @@ def retrieval_settings_component():
         help="Minimum relevance score required for a retrieved chunk to be used.",
     )
 
+    st.sidebar.select_slider(
+        "Rerank Top-N",
+        options=[1, 3, 5],
+        value=3,
+        key="rerank_top_n",
+        help="Maximum number of reranked chunks passed to the LLM.",
+    )
+
 def chat_history_component():
     st.sidebar.subheader("🗨️ Chat History", divider="rainbow")
     threads = st.session_state["user"].threads

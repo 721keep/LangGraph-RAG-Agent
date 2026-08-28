@@ -2,6 +2,8 @@ import json
 
 from app.config import settings
 from app.db.pgvector_utils import vector_store
+from app.rag.reranker import rerank_documents
+
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableConfig
@@ -32,6 +34,7 @@ def _build_retrieved_source(
     doc: Document,
     source_index: int,
     relevance_score: float,
+    rerank_score: float | None = None,
 ) -> dict:
     """Build a structured retrieval source for citation and observability."""
 
@@ -57,6 +60,11 @@ def _build_retrieved_source(
         "page": display_page,
         "chunk_index": chunk_index,
         "relevance_score": round(float(relevance_score), 4),
+        "rerank_score": (
+            round(float(rerank_score), 4)
+            if rerank_score is not None
+            else None
+        ),
         "content": doc.page_content,
     }
 
@@ -73,12 +81,17 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     thread_id = config["configurable"].get("thread_id")  # type: ignore
     top_k = config["configurable"].get("top_k", 3)  # type: ignore
     similarity_threshold = config["configurable"].get(
-    "similarity_threshold", 0.50
+        "similarity_threshold", 0.50
+    )
+    rerank_top_n = config["configurable"].get(
+        "rerank_top_n",
+        3,
     )
     logger.info(
         f"Retrieving documents for user_id: {user_id}, "
         f"thread_id: {thread_id}, top_k: {top_k}, "
-        f"similarity_threshold: {similarity_threshold}"
+        f"similarity_threshold: {similarity_threshold}, "
+        f"rerank_top_n: {rerank_top_n}"
     )
 
     results = await vector_store.asimilarity_search_with_relevance_scores(
@@ -94,33 +107,99 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         if score >= similarity_threshold
     ]
 
-    retrieved_count = len(filtered_results)
-    filtered_count = candidate_count - retrieved_count
+    threshold_passed_count = len(filtered_results)
+    threshold_filtered_count = (
+        candidate_count - threshold_passed_count
+    )
 
+    if filtered_results:
+        rerank_results = await rerank_documents(
+            query=query,
+            documents=[
+                doc.page_content
+                for doc, _ in filtered_results
+            ],
+            top_n=rerank_top_n,
+        )
+    else:
+        rerank_results = []
+
+    reranked_results = []
+
+    for rerank_result in rerank_results:
+        candidate_index = rerank_result["index"]
+        rerank_score = rerank_result["relevance_score"]
+
+        if not (
+            0 <= candidate_index < len(filtered_results)
+        ):
+            logger.warning(
+                f"Skipping invalid rerank index: "
+                f"{candidate_index}"
+            )
+            continue
+
+        doc, vector_score = filtered_results[
+            candidate_index
+        ]
+
+        reranked_results.append(
+            (
+                doc,
+                vector_score,
+                rerank_score,
+            )
+        )
 
     sources = [
         _build_retrieved_source(
             doc=doc,
             source_index=source_index,
-            relevance_score=relevance_score,
+            relevance_score=vector_score,
+            rerank_score=rerank_score,
         )
-        for source_index, (doc, relevance_score) in enumerate(filtered_results, start=1)
+        for source_index, (
+            doc,
+            vector_score,
+            rerank_score,
+        ) in enumerate(
+            reranked_results,
+            start=1,
+        )
     ]
+
+    reranked_count = len(reranked_results)
+    retrieved_count = len(sources)
+
+    filtered_count = candidate_count - retrieved_count
 
     retrieval_result = {
         "query": query,
         "top_k": top_k,
         "similarity_threshold": similarity_threshold,
         "candidate_count": candidate_count,
+        "threshold_passed_count": threshold_passed_count,
+        "threshold_filtered_count": threshold_filtered_count,
+        "rerank_top_n": rerank_top_n,
+        "reranked_count": reranked_count,
         "retrieved_count": retrieved_count,
         "filtered_count": filtered_count,
         "sources": sources,
     }
 
-    return json.dumps(
+    serialized_result = json.dumps(
         retrieval_result,
         ensure_ascii=False,
     )
+
+    logger.info(
+        f"Retrieval result after reranking: "
+        f"retrieved_count={retrieved_count}, "
+        f"reranked_count={reranked_count}, "
+        f"sources_count={len(sources)}"
+    )
+
+    return serialized_result
 
 
 tools = [retrieve_user_documents, tavily]

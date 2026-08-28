@@ -56,9 +56,19 @@ def authenticated_user_chat_interface_component():
             async def fetch_stream():
                 nonlocal full_response
                 try:
-                    chat_data = {"prompt": text, "model_name": st.session_state["model_name"], "top_k": st.session_state.get("top_k", 3), "similarity_threshold": st.session_state.get(
-                        "similarity_threshold", 0.50
-                    )}
+                    chat_data = {
+                        "prompt": text,
+                        "model_name": st.session_state["model_name"],
+                        "top_k": st.session_state.get("top_k", 3),
+                        "similarity_threshold": st.session_state.get(
+                            "similarity_threshold",
+                            0.50,
+                        ),
+                        "rerank_top_n": st.session_state.get(
+                            "rerank_top_n",
+                            3,
+                        ),
+                    }
                     async for line in api_utils.chat_stream(chat_data, st.session_state["thread"].id):
                         try:
                             event: dict = json.loads(line)
@@ -157,6 +167,23 @@ def _render_retrieval_result(content: str) -> bool:
         max(candidate_count - retrieved_count, 0),
     )
 
+    threshold_passed_count = retrieval_data.get(
+    "threshold_passed_count",
+    retrieved_count,
+    )
+
+    threshold_filtered_count = retrieval_data.get(
+        "threshold_filtered_count",
+        max(candidate_count - threshold_passed_count, 0),
+    )
+
+    rerank_top_n = retrieval_data.get("rerank_top_n")
+
+    reranked_count = retrieval_data.get(
+        "reranked_count",
+        retrieved_count,
+    )
+
     st.markdown(
         f"**🔎 Retrieved Sources:** {retrieved_count} chunk(s)"
     )
@@ -179,10 +206,19 @@ def _render_retrieval_result(content: str) -> bool:
 
     # Retrieval filtering statistics
     stats_parts = [
-        f"Candidates: `{candidate_count}`",
-        f"Passed: `{retrieved_count}`",
-        f"Filtered: `{filtered_count}`",
+        f"Vector Candidates: `{candidate_count}`",
+        f"Threshold Passed: `{threshold_passed_count}`",
+        f"Threshold Filtered: `{threshold_filtered_count}`",
     ]
+
+    if rerank_top_n is not None:
+        stats_parts.append(
+            f"Rerank Top-N: `{rerank_top_n}`"
+        )
+
+    stats_parts.append(
+        f"Final Sources: `{retrieved_count}`"
+    )
 
     st.caption(" · ".join(stats_parts))
 
@@ -210,6 +246,7 @@ def _render_retrieval_result(content: str) -> bool:
         chunk_index = source.get("chunk_index")
         relevance_score = source.get("relevance_score")
         retrieved_content = source.get("content", "")
+        rerank_score = source.get("rerank_score")
 
         try:
             score_value = float(relevance_score)
@@ -218,9 +255,24 @@ def _render_retrieval_result(content: str) -> bool:
             score_value = None
             score_text = "N/A"
 
-        expander_title = (
-            f"{source_label} · {file_name} · Relevance {score_text}"
-        )
+        try:
+            rerank_score_value = float(rerank_score)
+            rerank_score_text = f"{rerank_score_value:.3f}"
+        except (TypeError, ValueError):
+            rerank_score_value = None
+            rerank_score_text = "N/A"
+
+        if rerank_score_value is not None:
+            expander_title = (
+                f"{source_label} · {file_name} · "
+                f"Vector {score_text} · "
+                f"Rerank {rerank_score_text}"
+            )
+        else:
+            expander_title = (
+                f"{source_label} · {file_name} · "
+                f"Relevance {score_text}"
+            )
 
         with st.expander(expander_title, expanded=False):
             metadata_parts = []
@@ -241,15 +293,18 @@ def _render_retrieval_result(content: str) -> bool:
 
             if score_value is not None:
                 st.caption(
-                    f"Relevance score: {score_value:.4f}"
+                    f"Vector relevance score: {score_value:.4f}"
                 )
-
                 normalized_score = max(
                     0.0,
                     min(1.0, score_value),
                 )
                 st.progress(normalized_score)
 
+            if rerank_score_value is not None:
+                st.caption(
+                    f"Rerank score: {rerank_score_value:.4f}"
+                )
             st.markdown("**Retrieved content**")
             st.code(retrieved_content)
 
