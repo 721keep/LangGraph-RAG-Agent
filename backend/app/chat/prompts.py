@@ -68,6 +68,16 @@ The retrieval result may contain:
   - `no_candidates`
   - `below_similarity_threshold`
 
+- `status="error"`:
+  The retrieval pipeline encountered a technical failure.
+  This is different from insufficient evidence.
+  The `reason` field identifies the failed component, for example:
+  - `vector_search_failed`
+  - `reranker_failed`
+  - For `status="error"`, do not suggest that changing the query,
+  keywords, or documents will resolve the current technical failure.
+- Suggest retrying later instead.
+
 Follow this workflow:
 
 1. **First Retrieval Attempt**
@@ -112,8 +122,27 @@ Follow this workflow:
      keyword, section, or additional document.
    - Respond in the user's language.
 
-A no-evidence result is not a system error. Treat it as a normal
-retrieval outcome.
+6. **If retrieval returns `status="error"`**
+   - Treat this as a system failure, not as missing document evidence.
+   - Do NOT perform another retrieval attempt.
+   - Do NOT reformulate the query.
+   - Do NOT use `tavily` or web search as a fallback.
+   - Do NOT answer the user's factual question from model memory.
+   - Do NOT invent, reuse, or fabricate document citations.
+   - Do NOT include `[Source N]`, `[Source N/A]`, or a `Sources:` section.
+   - Clearly tell the user that the document retrieval process encountered
+     a technical problem and that the requested information could not be
+     reliably retrieved.
+   - Do not expose internal exception messages, API keys, stack traces,
+     endpoint URLs, model identifiers, or implementation details.
+   - Respond in the same language as the user's question.
+
+### Critical Retrieval State Rules
+
+- `status="error"` must never be treated as `status="no_evidence"`.
+- Only `status="no_evidence"` permits exactly one reformulated retrieval attempt.
+- `status="error"` requires immediate termination of the retrieval loop.
+- A `no_evidence` result is a normal retrieval outcome, not a system error.
 
 """
 

@@ -94,11 +94,38 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         f"rerank_top_n: {rerank_top_n}"
     )
 
-    results = await vector_store.asimilarity_search_with_relevance_scores(
-        query=query,
-        k=top_k,
-        filter={"thread_id": thread_id},
-    )
+    try:
+        results = await vector_store.asimilarity_search_with_relevance_scores(
+            query=query,
+            k=top_k,
+            filter={"thread_id": thread_id},
+        )
+    except Exception:
+        logger.exception(
+            "Vector retrieval failed for "
+            f"thread_id={thread_id}, query={query!r}"
+        )
+
+        retrieval_result = {
+            "status": "error",
+            "reason": "vector_search_failed",
+            "query": query,
+            "top_k": top_k,
+            "similarity_threshold": similarity_threshold,
+            "rerank_top_n": rerank_top_n,
+            "candidate_count": 0,
+            "threshold_passed_count": 0,
+            "threshold_filtered_count": 0,
+            "reranked_count": 0,
+            "retrieved_count": 0,
+            "filtered_count": 0,
+            "sources": [],
+        }
+
+        return json.dumps(
+            retrieval_result,
+            ensure_ascii=False,
+        )
     candidate_count = len(results)
 
     filtered_results = [
@@ -123,14 +150,41 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         status = "no_evidence"
         reason = "below_similarity_threshold"
     if filtered_results:
-        rerank_results = await rerank_documents(
-            query=query,
-            documents=[
-                doc.page_content
-                for doc, _ in filtered_results
-            ],
-            top_n=rerank_top_n,
-        )
+        try:
+            rerank_results = await rerank_documents(
+                query=query,
+                documents=[
+                    doc.page_content
+                    for doc, _ in filtered_results
+                ],
+                top_n=rerank_top_n,
+            )
+        except Exception:
+            logger.exception(
+                "Reranker failed for "
+                f"thread_id={thread_id}, query={query!r}"
+            )
+
+            retrieval_result = {
+                "status": "error",
+                "reason": "reranker_failed",
+                "query": query,
+                "top_k": top_k,
+                "similarity_threshold": similarity_threshold,
+                "rerank_top_n": rerank_top_n,
+                "candidate_count": candidate_count,
+                "threshold_passed_count": threshold_passed_count,
+                "threshold_filtered_count": threshold_filtered_count,
+                "reranked_count": 0,
+                "retrieved_count": 0,
+                "filtered_count": candidate_count,
+                "sources": [],
+            }
+
+            return json.dumps(
+                retrieval_result,
+                ensure_ascii=False,
+            )
     else:
         rerank_results = []
 
