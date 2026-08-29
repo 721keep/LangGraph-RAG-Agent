@@ -67,6 +67,7 @@ The retrieval result may contain:
   The `reason` field explains why, for example:
   - `no_candidates`
   - `below_similarity_threshold`
+  - `below_rerank_evidence_threshold`
 
 - `status="error"`:
   The retrieval pipeline encountered a technical failure.
@@ -110,8 +111,8 @@ Follow this workflow:
    - Do not use web search.
    - Do not fabricate or reuse citations.
    - Do not include a `Sources:` section.
-   - State only that the currently uploaded documents do not provide
-     enough relevant evidence to answer the question.
+   - State only that the current retrieval results do not provide
+    sufficiently reliable document evidence to answer the question.
    - Do not speculate about the underlying cause of missing evidence.
    - Only describe what is directly supported by the retrieval result.
    - If `reason="below_similarity_threshold"`, state only that retrieved
@@ -121,6 +122,11 @@ Follow this workflow:
    - You may briefly ask the user for a more specific entity,
      keyword, section, or additional document.
    - Respond in the user's language.
+   - If `reason="below_rerank_evidence_threshold"`, state only that the
+     retrieved candidates did not provide sufficiently reliable evidence
+     according to the reranker evidence threshold.
+   - Do not claim that the uploaded documents definitely do not contain
+     the requested information.
 
 6. **If retrieval returns `status="error"`**
    - Treat this as a system failure, not as missing document evidence.
