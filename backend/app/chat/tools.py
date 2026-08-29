@@ -10,7 +10,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from loguru import logger
 
-
+DEFAULT_RERANK_EVIDENCE_THRESHOLD = 0.70
 tavily = TavilySearchResults(
     name="web_search",
     description=(
@@ -87,11 +87,17 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         "rerank_top_n",
         3,
     )
+    rerank_evidence_threshold = config["configurable"].get(
+    "rerank_evidence_threshold",
+    DEFAULT_RERANK_EVIDENCE_THRESHOLD,
+    )
     logger.info(
         f"Retrieving documents for user_id: {user_id}, "
         f"thread_id: {thread_id}, top_k: {top_k}, "
         f"similarity_threshold: {similarity_threshold}, "
-        f"rerank_top_n: {rerank_top_n}"
+        f"rerank_top_n: {rerank_top_n}, "
+        f"rerank_evidence_threshold: "
+        f"{rerank_evidence_threshold}"
     )
 
     try:
@@ -113,6 +119,11 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
             "top_k": top_k,
             "similarity_threshold": similarity_threshold,
             "rerank_top_n": rerank_top_n,
+            "rerank_evidence_threshold": (
+                rerank_evidence_threshold
+            ),
+            "top_rerank_score": None,
+            "evidence_gate_passed": None,
             "candidate_count": 0,
             "threshold_passed_count": 0,
             "threshold_filtered_count": 0,
@@ -168,6 +179,11 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
             retrieval_result = {
                 "status": "error",
                 "reason": "reranker_failed",
+                "rerank_evidence_threshold": (
+                    rerank_evidence_threshold
+                ),
+                "top_rerank_score": None,
+                "evidence_gate_passed": None,
                 "query": query,
                 "top_k": top_k,
                 "similarity_threshold": similarity_threshold,
@@ -215,24 +231,85 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
             )
         )
 
-    sources = [
-        _build_retrieved_source(
-            doc=doc,
-            source_index=source_index,
-            relevance_score=vector_score,
-            rerank_score=rerank_score,
+
+    # Calculate evidence confidence only after
+    # all reranker results have been processed.
+    top_rerank_score = (
+        max(
+            float(rerank_score)
+            for _, _, rerank_score
+            in reranked_results
         )
-        for source_index, (
-            doc,
-            vector_score,
-            rerank_score,
-        ) in enumerate(
-            reranked_results,
-            start=1,
-        )
-    ]
+        if reranked_results
+        else None
+    )
+
+    evidence_gate_passed = None
+
+
+    # Apply the reranker evidence gate only when
+    # vector retrieval itself has valid candidates.
+    if status == "ok":
+        if top_rerank_score is None:
+            status = "error"
+            reason = "reranker_failed"
+
+            logger.error(
+                "Reranker returned no usable results for "
+                f"thread_id={thread_id}, "
+                f"query={query!r}"
+            )
+
+        elif (
+            top_rerank_score
+            < rerank_evidence_threshold
+        ):
+            status = "no_evidence"
+            reason = (
+                "below_rerank_evidence_threshold"
+            )
+
+            evidence_gate_passed = False
+
+            logger.info(
+                "Reranker evidence gate rejected "
+                f"query={query!r}, "
+                f"top_rerank_score="
+                f"{top_rerank_score:.4f}, "
+                f"threshold="
+                f"{rerank_evidence_threshold:.4f}"
+            )
+
+        else:
+            evidence_gate_passed = True
+
 
     reranked_count = len(reranked_results)
+
+
+    # Sources are exposed to the LLM only when
+    # the evidence gate passes.
+    if status == "ok":
+        sources = [
+            _build_retrieved_source(
+                doc=doc,
+                source_index=source_index,
+                relevance_score=vector_score,
+                rerank_score=rerank_score,
+            )
+            for source_index, (
+                doc,
+                vector_score,
+                rerank_score,
+            ) in enumerate(
+                reranked_results,
+                start=1,
+            )
+        ]
+    else:
+        sources = []
+
+
     retrieved_count = len(sources)
 
     filtered_count = candidate_count - retrieved_count
@@ -250,6 +327,17 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         "threshold_filtered_count": threshold_filtered_count,
 
         "rerank_top_n": rerank_top_n,
+        "rerank_evidence_threshold": (
+            rerank_evidence_threshold
+        ),
+        "top_rerank_score": (
+            round(float(top_rerank_score), 4)
+            if top_rerank_score is not None
+            else None
+        ),
+        "evidence_gate_passed": (
+            evidence_gate_passed
+        ),
         "reranked_count": reranked_count,
 
         "retrieved_count": retrieved_count,
@@ -268,8 +356,13 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         f"status={status}, "
         f"reason={reason}, "
         f"candidate_count={candidate_count}, "
-        f"threshold_passed_count={threshold_passed_count}, "
+        f"threshold_passed_count="
+        f"{threshold_passed_count}, "
         f"reranked_count={reranked_count}, "
+        f"top_rerank_score="
+        f"{top_rerank_score}, "
+        f"evidence_gate_passed="
+        f"{evidence_gate_passed}, "
         f"retrieved_count={retrieved_count}"
     )
 

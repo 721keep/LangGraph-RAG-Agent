@@ -138,12 +138,14 @@ def _render_retrieval_result(content: str) -> bool:
 
     try:
         retrieval_data = json.loads(content)
+
     except (json.JSONDecodeError, TypeError):
         return False
 
     if not isinstance(retrieval_data, dict) or "sources" not in retrieval_data:
         return False
-
+    status = retrieval_data.get("status", "ok")
+    reason = retrieval_data.get("reason")
     sources = retrieval_data.get("sources", [])
     query = retrieval_data.get("query")
     top_k = retrieval_data.get("top_k")
@@ -162,11 +164,6 @@ def _render_retrieval_result(content: str) -> bool:
         retrieved_count,
     )
 
-    filtered_count = retrieval_data.get(
-        "filtered_count",
-        max(candidate_count - retrieved_count, 0),
-    )
-
     threshold_passed_count = retrieval_data.get(
     "threshold_passed_count",
     retrieved_count,
@@ -178,10 +175,20 @@ def _render_retrieval_result(content: str) -> bool:
     )
 
     rerank_top_n = retrieval_data.get("rerank_top_n")
-
     reranked_count = retrieval_data.get(
         "reranked_count",
         retrieved_count,
+    )
+    rerank_evidence_threshold = retrieval_data.get(
+    "rerank_evidence_threshold"
+    )
+
+    top_rerank_score = retrieval_data.get(
+        "top_rerank_score"
+    )
+
+    evidence_gate_passed = retrieval_data.get(
+        "evidence_gate_passed"
     )
 
     st.markdown(
@@ -200,7 +207,11 @@ def _render_retrieval_result(content: str) -> bool:
         summary_parts.append(
             f"Threshold: `{float(similarity_threshold):.2f}`"
         )
-
+    if rerank_evidence_threshold is not None:
+        summary_parts.append(
+            "Evidence Threshold: "
+            f"`{float(rerank_evidence_threshold):.2f}`"
+        )
     if summary_parts:
         st.caption(" · ".join(summary_parts))
 
@@ -217,21 +228,91 @@ def _render_retrieval_result(content: str) -> bool:
         )
 
     stats_parts.append(
+        f"Reranked: `{reranked_count}`"
+    )
+
+    if top_rerank_score is not None:
+        stats_parts.append(
+            "Top Rerank Score: "
+            f"`{float(top_rerank_score):.3f}`"
+        )
+
+    if evidence_gate_passed is True:
+        stats_parts.append(
+            "Evidence Gate: `PASS`"
+        )
+    elif evidence_gate_passed is False:
+        stats_parts.append(
+            "Evidence Gate: `REJECT`"
+        )
+
+    stats_parts.append(
         f"Final Sources: `{retrieved_count}`"
     )
 
     st.caption(" · ".join(stats_parts))
 
-    if not sources:
-        if similarity_threshold is not None:
-            st.info(
-                "No retrieved chunks passed the similarity threshold."
+    if status == "error":
+        if reason == "vector_search_failed":
+            st.error(
+                "Document retrieval failed during vector search."
+            )
+        elif reason == "reranker_failed":
+            st.error(
+                "Document retrieval failed during reranking."
             )
         else:
-            st.info(
-                "No relevant document chunks were retrieved."
+            st.error(
+                "Document retrieval encountered a technical error."
             )
 
+        return True
+
+    if status == "no_evidence":
+        if reason == "no_candidates":
+            st.info(
+                "No candidate document chunks were retrieved."
+            )
+
+        elif reason == "below_similarity_threshold":
+            st.info(
+                "No retrieved chunks passed the "
+                "similarity threshold."
+            )
+
+        elif reason == "below_rerank_evidence_threshold":
+            if (
+                top_rerank_score is not None
+                and rerank_evidence_threshold is not None
+            ):
+                st.info(
+                    "Candidate chunks passed vector filtering, "
+                    "but the reranker evidence confidence was "
+                    "too low. "
+                    f"Top rerank score: "
+                    f"{float(top_rerank_score):.3f}; "
+                    f"required: "
+                    f"{float(rerank_evidence_threshold):.3f}."
+                )
+            else:
+                st.info(
+                    "Candidate chunks were rejected by "
+                    "the reranker evidence gate."
+                )
+
+        else:
+            st.info(
+                "No sufficiently reliable document "
+                "evidence was found."
+            )
+
+        return True
+
+    if not sources:
+        st.warning(
+            "Retrieval returned status=ok but no "
+            "document sources were available."
+        )
         return True
 
     for source in sources:
