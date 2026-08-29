@@ -1,0 +1,10 @@
+{"id":"ret_001","query":"Aster-X1 开始新的自主巡检任务时，电池至少需要剩余多少电量？","answerable":true,"query_type":"direct","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":0,"page":null},{"file_name":"retrieval_eval_source.txt","chunk_index":3,"page":null}]}
+{"id":"ret_002","query":"这台设备多久必须做一次完整维护？","answerable":true,"query_type":"paraphrase","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":1,"page":null},{"file_name":"retrieval_eval_source.txt","chunk_index":10,"page":null}]}
+{"id":"ret_003","query":"巡检过程中网络突然断开后，机器人最多还能继续执行原任务多久？","answerable":true,"query_type":"paraphrase","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":2,"page":null},{"file_name":"retrieval_eval_source.txt","chunk_index":10,"page":null}]}
+{"id":"ret_004","query":"设备已经在执行任务时，剩余电量降到多少会触发低电量返航？","answerable":true,"query_type":"semantic","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":3,"page":null}]}
+{"id":"ret_005","query":"出现 E73 告警时应该重点检查什么？","answerable":true,"query_type":"direct","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":4,"page":null},{"file_name":"retrieval_eval_source.txt","chunk_index":8,"page":null}]}
+{"id":"ret_006","query":"系统每天什么时候整理日志，什么时候开始向控制站同步？","answerable":true,"query_type":"direct","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":5,"page":null},{"file_name":"retrieval_eval_source.txt","chunk_index":10,"page":null}]}
+{"id":"ret_007","query":"谁有权限创建和删除系统用户？","answerable":true,"query_type":"semantic","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":6,"page":null}]}
+{"id":"ret_008","query":"网络故障后的安全等待点和低电量时前往的充电区域是不是同一个概念？","answerable":true,"query_type":"semantic","expected_sources":[{"file_name":"retrieval_eval_source.txt","chunk_index":7,"page":null}]}
+{"id":"ret_009","query":"Aster-X1 使用的 CPU 具体是什么型号？","answerable":false,"query_type":"no_evidence","expected_sources":[]}
+{"id":"ret_010","query":"Aster-X1 出厂时机身默认是什么颜色？","answerable":false,"query_type":"no_evidence","expected_sources":[]}

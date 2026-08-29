@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN uv pip install --system --no-cache-dir -r requirements.txt
 
 COPY ./app/ ./app/
-
+COPY ./evaluation/ ./evaluation/
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
