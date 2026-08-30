@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 from statistics import mean
 from typing import Any
@@ -15,6 +16,25 @@ from evaluation.prepare_corpus import EVAL_THREAD_ID
 TOP_K = 10
 K_VALUES = (1, 3, 5, 10)
 
+def _parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for retrieval evaluation."""
+
+    parser = argparse.ArgumentParser(
+        description="Run vector retrieval evaluation."
+    )
+
+    parser.add_argument(
+        "--case",
+        dest="case_ids",
+        nargs="+",
+        default=None,
+        help=(
+            "Evaluate only the specified case IDs, "
+            "for example: --case ret_011 ret_012"
+        ),
+    )
+
+    return parser.parse_args()
 
 def _document_to_source(
     document: Any,
@@ -207,7 +227,35 @@ async def main() -> None:
     No-evidence cases are intentionally excluded from this stage.
     """
 
+    args = _parse_args()
+
     dataset = load_dataset()
+
+    if args.case_ids:
+        available_case_ids = {
+            case["id"]
+            for case in dataset
+        }
+
+        unknown_case_ids = [
+            case_id
+            for case_id in args.case_ids
+            if case_id not in available_case_ids
+        ]
+
+        if unknown_case_ids:
+            raise ValueError(
+                "Unknown evaluation case ID(s): "
+                + ", ".join(unknown_case_ids)
+            )
+
+        requested_case_ids = set(args.case_ids)
+
+        dataset = [
+            case
+            for case in dataset
+            if case["id"] in requested_case_ids
+        ]
 
     answerable_cases = [
         case
@@ -219,6 +267,12 @@ async def main() -> None:
         len(dataset)
         - len(answerable_cases)
     )
+
+    if not answerable_cases:
+        print(
+            "No answerable evaluation cases were selected."
+        )
+        return
 
     print("=" * 80)
     print("Vector Retrieval Baseline Evaluation")

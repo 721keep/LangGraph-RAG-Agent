@@ -1,7 +1,7 @@
 import asyncio
 from statistics import mean
 from typing import Any
-
+import argparse
 from app.db.pgvector_utils import vector_store
 from app.rag.reranker import rerank_documents
 
@@ -18,6 +18,27 @@ VECTOR_TOP_K = 10
 RERANK_TOP_N = 5
 K_VALUES = (1, 3, 5)
 
+
+
+def _parse_args() -> argparse.Namespace:
+    """Parse command-line arguments for reranker evaluation."""
+
+    parser = argparse.ArgumentParser(
+        description="Run reranker evaluation."
+    )
+
+    parser.add_argument(
+        "--case",
+        dest="case_ids",
+        nargs="+",
+        default=None,
+        help=(
+            "Evaluate only the specified case IDs, "
+            "for example: --case ret_011 ret_012"
+        ),
+    )
+
+    return parser.parse_args()
 
 def _document_to_source(
     document: Any,
@@ -321,8 +342,34 @@ def _average_metric(
 
 async def main() -> None:
     """Run vector vs reranker evaluation."""
-
+    
+    args = _parse_args()
     dataset = load_dataset()
+    if args.case_ids:
+        available_case_ids = {
+            case["id"]
+            for case in dataset
+        }
+
+        unknown_case_ids = [
+            case_id
+            for case_id in args.case_ids
+            if case_id not in available_case_ids
+        ]
+
+        if unknown_case_ids:
+            raise ValueError(
+                "Unknown evaluation case ID(s): "
+                + ", ".join(unknown_case_ids)
+            )
+
+        requested_case_ids = set(args.case_ids)
+
+        dataset = [
+            case
+            for case in dataset
+            if case["id"] in requested_case_ids
+        ]
 
     answerable_cases = [
         case
