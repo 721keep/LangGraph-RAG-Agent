@@ -15,7 +15,7 @@ def create_model(model_name: str, streaming: bool = False) -> BaseChatModel:
     model = init_chat_model(
         model=model_name,
         model_provider=settings.model_provider,
-        api_key=settings.api_key,
+        api_key=settings.chat_api_key,
         base_url=settings.model_base_url or None,
         streaming=streaming,
     )

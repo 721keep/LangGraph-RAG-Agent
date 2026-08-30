@@ -15,7 +15,7 @@ embeddings = init_embeddings(
     model=settings.embeddings_model_name,
     base_url=settings.embeddings_base_url,
     provider=settings.model_provider,
-    api_key=settings.api_key,
+    api_key=settings.dashscope_api_key,
     check_embedding_ctx_length=False,
     chunk_size=10,
 )

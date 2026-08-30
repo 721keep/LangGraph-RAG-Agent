@@ -25,7 +25,13 @@ logger.add(
 
 
 class Settings(BaseSettings):
-    api_key: SecretStr = Field(alias="OPENAI_API_KEY")
+    chat_api_key: SecretStr = Field(
+    alias="CHAT_API_KEY"
+    )
+
+    dashscope_api_key: SecretStr = Field(
+        alias="DASHSCOPE_API_KEY"
+    )
     tavily_api_key: str
     model_provider: str
     model_names: list[str]

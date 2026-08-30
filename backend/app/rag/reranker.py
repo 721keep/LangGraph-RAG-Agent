@@ -20,7 +20,10 @@ class RerankResult(TypedDict):
 
 
 rerank_client = AsyncOpenAI(
-    api_key=settings.api_key.get_secret_value(),
+    api_key=(
+        settings.dashscope_api_key
+        .get_secret_value()
+    ),
     base_url=RERANK_BASE_URL,
     timeout=30.0,
 )
