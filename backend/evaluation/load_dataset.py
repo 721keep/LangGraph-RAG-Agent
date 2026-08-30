@@ -15,6 +15,8 @@ REQUIRED_FIELDS = {
     "answerable",
     "query_type",
     "expected_sources",
+    "reference_answer",
+    "required_facts",
 }
 
 VALID_QUERY_TYPES = {
@@ -97,7 +99,33 @@ def _validate_case(case: dict[str, Any]) -> None:
             f"{case_id}: invalid query_type={query_type!r}. "
             f"Expected one of {sorted(VALID_QUERY_TYPES)}."
         )
+    
+    reference_answer = case["reference_answer"]
+    required_facts = case["required_facts"]
 
+    if not isinstance(required_facts, list):
+        raise ValueError(
+            f"{case_id}: required_facts must be a list."
+        )
+
+    for fact in required_facts:
+        if not isinstance(fact, str):
+            raise ValueError(
+                f"{case_id}: every required fact "
+                "must be a string."
+            )
+
+        if not fact.strip():
+            raise ValueError(
+                f"{case_id}: required facts "
+                "must not contain empty strings."
+            )
+
+    if len(required_facts) != len(set(required_facts)):
+        raise ValueError(
+            f"{case_id}: required_facts "
+            "must not contain duplicates."
+        )
     expected_sources = case["expected_sources"]
 
     if not isinstance(expected_sources, list):
@@ -116,6 +144,36 @@ def _validate_case(case: dict[str, Any]) -> None:
             f"{case_id}: answerable=false requires "
             "expected_sources to be empty."
         )
+    if case["answerable"]:
+        if not isinstance(reference_answer, str):
+            raise ValueError(
+                f"{case_id}: answerable=true requires "
+                "reference_answer to be a string."
+            )
+
+        if not reference_answer.strip():
+            raise ValueError(
+                f"{case_id}: reference_answer "
+                "must not be empty."
+            )
+
+        if not required_facts:
+            raise ValueError(
+                f"{case_id}: answerable=true requires "
+                "at least one required fact."
+            )
+    else:
+        if reference_answer is not None:
+            raise ValueError(
+                f"{case_id}: answerable=false requires "
+                "reference_answer=null."
+            )
+
+        if required_facts:
+            raise ValueError(
+                f"{case_id}: answerable=false requires "
+                "required_facts to be empty."
+            )
 
     if (
         query_type == "no_evidence"
@@ -223,7 +281,9 @@ def main() -> None:
             f"type={case['query_type']} | "
             f"answerable={case['answerable']} | "
             f"gold_sources="
-            f"{len(case['expected_sources'])}"
+            f"{len(case['expected_sources'])} | "
+            f"required_facts="
+            f"{len(case['required_facts'])}"
         )
 
         print(
