@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 
 from . import service as chat_service
 from .schemas import ChatStreamResponse, Message, PromptInput
-
+from app.db.main import SessionDep
 chat_router = APIRouter()
 
 
@@ -18,9 +18,19 @@ async def simple_chat_stream(prompt_input: PromptInput):
 
 
 @chat_router.post("/{thread_id}")
-async def chat_stream(thread_id: UUID, prompt_input: PromptInput, current_user: CurrentUserDep):
+async def chat_stream(
+    thread_id: UUID,
+    prompt_input: PromptInput,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+):
     return ChatStreamResponse(
-        await chat_service.chat_stream(thread_id, prompt_input, current_user.id),
+        await chat_service.chat_stream(
+            thread_id=thread_id,
+            prompt_input=prompt_input,
+            user_id=current_user.id,
+            session=session,
+        ),
     )
 
 

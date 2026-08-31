@@ -72,14 +72,21 @@ def _build_retrieved_source(
 @tool
 async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     """
-    Use this tool to answer questions about the user's uploaded documents.
-    It automatically retrieves relevant document chunks for the current thread
-    and returns structured content, citation metadata, and relevance scores.
+    Use this tool to answer questions about documents in the knowledge base
+    selected by the current thread.
+
+    Retrieval is isolated by both the current user and the selected
+    knowledge base, and returns structured content, citation metadata,
+    and relevance scores.
     """
 
-    user_id = config["configurable"].get("user_id")  # type: ignore
-    thread_id = config["configurable"].get("thread_id")  # type: ignore
-    top_k = config["configurable"].get("top_k", 3)  # type: ignore
+    user_id = config["configurable"].get("user_id")
+    thread_id = config["configurable"].get("thread_id")
+    knowledge_base_id = config["configurable"].get(
+        "knowledge_base_id"
+    )
+
+    top_k = config["configurable"].get("top_k", 3)
     similarity_threshold = config["configurable"].get(
         "similarity_threshold", 0.50
     )
@@ -93,29 +100,68 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
     )
     logger.info(
         f"Retrieving documents for user_id: {user_id}, "
-        f"thread_id: {thread_id}, top_k: {top_k}, "
+        f"thread_id: {thread_id}, "
+        f"knowledge_base_id: {knowledge_base_id}, "
+        f"top_k: {top_k}, "
         f"similarity_threshold: {similarity_threshold}, "
         f"rerank_top_n: {rerank_top_n}, "
         f"rerank_evidence_threshold: "
         f"{rerank_evidence_threshold}"
     )
+    if knowledge_base_id is None:
+        logger.info(
+            "Document retrieval skipped because no knowledge base "
+            f"is selected for thread_id={thread_id}."
+        )
 
+        retrieval_result = {
+            "status": "no_evidence",
+            "reason": "knowledge_base_not_selected",
+            "query": query,
+            "knowledge_base_id": None,
+            "top_k": top_k,
+            "similarity_threshold": similarity_threshold,
+            "rerank_top_n": rerank_top_n,
+            "rerank_evidence_threshold": (
+                rerank_evidence_threshold
+            ),
+            "top_rerank_score": None,
+            "evidence_gate_passed": None,
+            "candidate_count": 0,
+            "threshold_passed_count": 0,
+            "threshold_filtered_count": 0,
+            "reranked_count": 0,
+            "retrieved_count": 0,
+            "filtered_count": 0,
+            "sources": [],
+        }
+
+        return json.dumps(
+            retrieval_result,
+            ensure_ascii=False,
+        )
     try:
         results = await vector_store.asimilarity_search_with_relevance_scores(
             query=query,
             k=top_k,
-            filter={"thread_id": thread_id},
+            filter={
+                "user_id": user_id,
+                "knowledge_base_id": knowledge_base_id,
+            },
         )
     except Exception:
         logger.exception(
             "Vector retrieval failed for "
-            f"thread_id={thread_id}, query={query!r}"
+            f"thread_id={thread_id}, "
+            f"knowledge_base_id={knowledge_base_id}, "
+            f"query={query!r}"
         )
 
         retrieval_result = {
             "status": "error",
             "reason": "vector_search_failed",
             "query": query,
+            "knowledge_base_id": knowledge_base_id,
             "top_k": top_k,
             "similarity_threshold": similarity_threshold,
             "rerank_top_n": rerank_top_n,
@@ -173,7 +219,9 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         except Exception:
             logger.exception(
                 "Reranker failed for "
-                f"thread_id={thread_id}, query={query!r}"
+                f"thread_id={thread_id}, "
+                f"knowledge_base_id={knowledge_base_id}, "
+                f"query={query!r}"
             )
 
             retrieval_result = {
@@ -257,6 +305,7 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
             logger.error(
                 "Reranker returned no usable results for "
                 f"thread_id={thread_id}, "
+                f"knowledge_base_id={knowledge_base_id}, "
                 f"query={query!r}"
             )
 
@@ -321,7 +370,7 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
         "query": query,
         "top_k": top_k,
         "similarity_threshold": similarity_threshold,
-
+        "knowledge_base_id": knowledge_base_id,
         "candidate_count": candidate_count,
         "threshold_passed_count": threshold_passed_count,
         "threshold_filtered_count": threshold_filtered_count,

@@ -22,12 +22,14 @@ class User:
         access_token: str | None = None,
         refresh_token: str | None = None,
         threads: list[dict] | None = None,
+        knowledge_bases: list[dict] | None = None,
     ):
         self.is_authenticated = is_authenticated
         self.username = username
         self.access_token = access_token
         self.refresh_token = refresh_token
         self.threads = threads or []
+        self.knowledge_bases = knowledge_bases or []
 
 
 class Thread:
@@ -36,12 +38,14 @@ class Thread:
         id: UUID | None = None,
         title: str = "",
         user_id: UUID | None = None,
+        knowledge_base_id: UUID | None = None,
         messages: list | None = None,
         documents: list | None = None,
     ):
         self.id = id
         self.user_id = user_id
         self.title = title
+        self.knowledge_base_id = knowledge_base_id
         self.messages = messages or []
         self.documents = documents or []
 
@@ -74,11 +78,31 @@ def update_thread(thread_id: UUID, title: str):
 
 def change_thread(thread_id: UUID) -> None:
     get_thread_response = api_utils.get_thread(thread_id)
+
     title = get_thread_response.get("title")
     user_id = get_thread_response.get("user_id")
+    knowledge_base_id = get_thread_response.get(
+        "knowledge_base_id"
+    )
 
-    st.session_state["thread"] = Thread(id=thread_id, title=title, user_id=user_id)  # type: ignore
-    update_document_list(thread_id)
+    st.session_state["thread"] = Thread(
+        id=thread_id,
+        title=title,
+        user_id=user_id,
+        knowledge_base_id=(
+            UUID(knowledge_base_id)
+            if knowledge_base_id
+            else None
+        ),
+    )
+
+    if knowledge_base_id:
+        update_knowledge_base_document_list(
+            UUID(knowledge_base_id)
+        )
+    else:
+        st.session_state["thread"].documents = []
+
     update_chat_history(thread_id)
 
 
@@ -91,6 +115,33 @@ def update_document_list(thread_id: UUID) -> None:
         documents = documents_response
 
     st.session_state["thread"].documents = documents
+
+def update_knowledge_base_document_list(
+    knowledge_base_id: UUID,
+) -> None:
+    documents = []
+
+    documents_response = (
+        api_utils.list_knowledge_base_documents(
+            knowledge_base_id
+        )
+    )
+
+    if documents_response is None:
+        st.sidebar.error(
+            "Failed to retrieve knowledge base documents."
+        )
+    else:
+        documents = documents_response
+
+    st.session_state["thread"].documents = documents
+
+
+
+def update_user_knowledge_bases() -> list[dict]:
+    knowledge_bases = api_utils.get_knowledge_bases()
+    st.session_state["user"].knowledge_bases = knowledge_bases
+    return knowledge_bases
 
 
 def update_user_threads() -> list[dict]:
@@ -118,6 +169,7 @@ def authenticate_user(login_response: dict) -> None:
         refresh_token=login_response.get("refresh_token"),
     )
     update_user_threads()
+    update_user_knowledge_bases()
     st.session_state["thread"] = Thread()
 
 

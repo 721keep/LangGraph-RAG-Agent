@@ -1,6 +1,7 @@
 from pathlib import Path
 from uuid import UUID, uuid4
-
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from langchain.embeddings import init_embeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import Docx2txtLoader, PyPDFLoader, TextLoader
@@ -65,28 +66,78 @@ async def _load_and_split_documents(file_path: Path) -> list[Document]:
     return splits
 
 
-async def index_document_to_pgvector(file_path: Path, document_id: UUID, thread_id: UUID, user_id: UUID) -> list[str]:
-    """Index a document to PGVector."""
+async def index_document_to_pgvector(
+    file_path: Path,
+    document_id: UUID,
+    thread_id: UUID | None,
+    user_id: UUID,
+    knowledge_base_id: UUID | None = None,
+) -> list[str]:
+    """
+    Index a document into PGVector.
 
-    logger.info(f"Starting indexing for document: {file_path} with document_id: {document_id}")
+    During the migration period, a document must belong to exactly
+    one retrieval scope:
+
+    - legacy thread scope
+    - knowledge base scope
+    """
+
+    has_thread_scope = thread_id is not None
+    has_knowledge_base_scope = knowledge_base_id is not None
+
+    if has_thread_scope == has_knowledge_base_scope:
+        raise ValueError(
+            "Exactly one of thread_id or knowledge_base_id "
+            "must be provided when indexing a document."
+        )
+
+    logger.info(
+        f"Starting indexing for document: {file_path}, "
+        f"document_id: {document_id}, "
+        f"thread_id: {thread_id}, "
+        f"knowledge_base_id: {knowledge_base_id}, "
+        f"user_id: {user_id}"
+    )
+
     splits = await _load_and_split_documents(file_path)
 
     for chunk_index, split in enumerate(splits):
         split.metadata["id"] = str(uuid4())
         split.metadata["file_name"] = file_path.name
         split.metadata["document_id"] = str(document_id)
-        split.metadata["thread_id"] = str(thread_id)
         split.metadata["user_id"] = str(user_id)
         split.metadata["chunk_index"] = chunk_index
 
+        if thread_id is not None:
+            split.metadata["thread_id"] = str(thread_id)
+
+        if knowledge_base_id is not None:
+            split.metadata["knowledge_base_id"] = str(
+                knowledge_base_id
+            )
+
     try:
-        doc_ids = await vector_store.aadd_documents(splits, ids=[split.metadata["id"] for split in splits])
-        logger.info(
-            f"Successfully indexed {len(splits)} chunks for document {file_path} (document_id: {document_id}) to PGVector."
+        doc_ids = await vector_store.aadd_documents(
+            splits,
+            ids=[
+                split.metadata["id"]
+                for split in splits
+            ],
         )
+
+        logger.info(
+            f"Successfully indexed {len(splits)} chunks "
+            f"for document {file_path} "
+            f"(document_id: {document_id}) to PGVector."
+        )
+
         return doc_ids
+
     except Exception as e:
-        logger.error(f"Error adding documents to PGVector: {e}")
+        logger.error(
+            f"Error adding documents to PGVector: {e}"
+        )
         raise
 
 
@@ -108,3 +159,93 @@ async def delete_document_from_pgvector(document_ids: list[str]) -> None:
     logger.info(f"Attempting to delete {len(document_ids)} document chunks from PGVector.")
     await vector_store.adelete(ids=document_ids)
     logger.info(f"Successfully deleted {len(document_ids)} document chunks from PGVector.")
+
+async def delete_knowledge_base_from_pgvector(
+    knowledge_base_id: UUID,
+    user_id: UUID,
+    session: AsyncSession,
+) -> int:
+    """
+    Delete all PGVector chunks that belong to one user's knowledge base.
+
+    The caller owns the database transaction and is responsible for commit
+    or rollback.
+    """
+
+    statement = text(
+        """
+        DELETE FROM langchain_pg_embedding
+        WHERE collection_id IN (
+            SELECT uuid
+            FROM langchain_pg_collection
+            WHERE name = :collection_name
+        )
+        AND cmetadata->>'user_id' = :user_id
+        AND cmetadata->>'knowledge_base_id' = :knowledge_base_id
+        """
+    )
+
+    result = await session.execute(
+        statement,
+        {
+            "collection_name": settings.pgvector_collection_name,
+            "user_id": str(user_id),
+            "knowledge_base_id": str(knowledge_base_id),
+        },
+    )
+
+    deleted_count = result.rowcount or 0
+
+    logger.info(
+        "Deleted "
+        f"{deleted_count} PGVector chunk(s) for "
+        f"knowledge_base_id={knowledge_base_id}, "
+        f"user_id={user_id}."
+    )
+
+    return deleted_count
+
+async def delete_document_chunks_from_pgvector(
+    document_id: UUID,
+    user_id: UUID,
+    session: AsyncSession,
+) -> int:
+    """
+    Delete all PGVector chunks that belong to one document owned by a user.
+
+    The caller owns the database transaction and is responsible for commit
+    or rollback.
+    """
+
+    statement = text(
+        """
+        DELETE FROM langchain_pg_embedding
+        WHERE collection_id IN (
+            SELECT uuid
+            FROM langchain_pg_collection
+            WHERE name = :collection_name
+        )
+        AND cmetadata->>'user_id' = :user_id
+        AND cmetadata->>'document_id' = :document_id
+        """
+    )
+
+    result = await session.execute(
+        statement,
+        {
+            "collection_name": settings.pgvector_collection_name,
+            "user_id": str(user_id),
+            "document_id": str(document_id),
+        },
+    )
+
+    deleted_count = result.rowcount or 0
+
+    logger.info(
+        "Deleted "
+        f"{deleted_count} PGVector chunk(s) for "
+        f"document_id={document_id}, "
+        f"user_id={user_id}."
+    )
+
+    return deleted_count

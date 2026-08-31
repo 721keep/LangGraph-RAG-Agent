@@ -4,7 +4,11 @@ import json
 import api_utils
 import streamlit as st
 from loguru import logger
-from state_management import new_chat, update_document_list, update_thread, update_user_threads
+from state_management import (
+    new_chat,
+    update_thread,
+    update_user_threads,
+)
 
 
 def authenticated_user_chat_interface_component():
@@ -14,17 +18,49 @@ def authenticated_user_chat_interface_component():
             st.markdown(message["content"])
 
     if prompt := st.chat_input(
-        "Ask a question...", accept_file="multiple", key="prompt", file_type=["pdf", "docx", "txt"]
-    ):
+            "Ask a question...",
+            key="prompt",
+        ):
         if st.session_state["thread"].id is None:
             is_first_message = True
-            thread_id = api_utils.create_new_thread().get("id")
+
+            # Preserve the KB selected before the Thread exists.
+            selected_knowledge_base_id = (
+                st.session_state["thread"].knowledge_base_id
+            )
+
+            create_response = api_utils.create_new_thread()
+            thread_id = create_response.get("id")
+
             if thread_id is None:
-                raise ValueError("Something happend")
+                raise ValueError(
+                    "Failed to create a new thread."
+                )
+
             st.session_state["thread"].id = thread_id
 
-        text = prompt.text or ""
-        files = prompt.files or []
+            # If a KB was selected for the new chat,
+            # persist the binding immediately after Thread creation.
+            if selected_knowledge_base_id is not None:
+                bind_response = (
+                    api_utils.set_thread_knowledge_base(
+                        thread_id=thread_id,
+                        knowledge_base_id=selected_knowledge_base_id,
+                    )
+                )
+
+                if not bind_response.get("id"):
+                    # Avoid leaving a half-created Thread behind.
+                    api_utils.delete_thread(thread_id)
+
+                    st.session_state["thread"].id = None
+
+                    raise ValueError(
+                        "Failed to bind the selected "
+                        "knowledge base to the new thread."
+                    )
+
+        text = prompt
         if text:
             st.session_state["thread"].messages.append({"role": "human", "content": text})
 
@@ -33,20 +69,7 @@ def authenticated_user_chat_interface_component():
             update_user_threads()
 
         with st.chat_message("human"):
-            st.markdown(text or "*[file upload]*")
-            for up in files:
-                st.write(f"📂 {up.name}")
-
-        for file in files:
-            with st.spinner(f"Uploading {file.name}…"):
-                resp = api_utils.upload_document(st.session_state["thread"].id, file)
-                if resp:
-                    st.success(f"Uploaded {file.name} ➝ ID {resp['document_id']}")
-                else:
-                    st.error(f"Failed to upload {file.name}")
-
-        if files:
-            update_document_list(st.session_state["thread"].id)
+            st.markdown(text)
 
         with st.chat_message("ai"):
             steps_container = st.container()
@@ -269,7 +292,13 @@ def _render_retrieval_result(content: str) -> bool:
         return True
 
     if status == "no_evidence":
-        if reason == "no_candidates":
+        if reason == "knowledge_base_not_selected":
+            st.info(
+                "No knowledge base is selected "
+                "for this conversation."
+            )
+
+        elif reason == "no_candidates":
             st.info(
                 "No candidate document chunks were retrieved."
             )

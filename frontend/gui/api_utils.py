@@ -346,8 +346,285 @@ def delete_thread(thread_id: UUID) -> dict:
         logger.error(f"API call for 'delete_thread' failed with an unexpected exception: {str(e)}")
         return {}
 
+## Knowledge Bases ----------------------------------------------------------
+
+
+def get_knowledge_bases() -> list:
+    """Get all knowledge bases owned by the current user."""
+
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {st.session_state['user'].access_token}",
+    }
+
+    try:
+        response = requests.get(
+            f"{BASE_URL}/knowledge-bases/",
+            headers=headers,
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            "Get knowledge bases failed with status "
+            f"{e.response.status_code}. Response: {e.response.text}"
+        )
+        return []
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            f"Get knowledge bases failed with RequestError: {str(e)}"
+        )
+        return []
+
+    except Exception as e:
+        logger.error(
+            "Get knowledge bases failed with an unexpected exception: "
+            f"{str(e)}"
+        )
+        return []
+
+
+def create_knowledge_base(
+    name: str,
+    description: str | None = None,
+) -> dict:
+    """Create a new knowledge base."""
+
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {st.session_state['user'].access_token}",
+    }
+
+    data = {
+        "name": name,
+        "description": description,
+    }
+
+    try:
+        response = requests.post(
+            f"{BASE_URL}/knowledge-bases/",
+            json=data,
+            headers=headers,
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            "Create knowledge base failed with status "
+            f"{e.response.status_code}. Response: {e.response.text}"
+        )
+        return {}
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            f"Create knowledge base failed with RequestError: {str(e)}"
+        )
+        return {}
+
+    except Exception as e:
+        logger.error(
+            "Create knowledge base failed with an unexpected exception: "
+            f"{str(e)}"
+        )
+        return {}
+
+
+def delete_knowledge_base(knowledge_base_id: UUID) -> bool:
+    """Delete one knowledge base."""
+
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {st.session_state['user'].access_token}",
+    }
+
+    try:
+        response = requests.delete(
+            f"{BASE_URL}/knowledge-bases/{knowledge_base_id}",
+            headers=headers,
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        return True
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            "Delete knowledge base failed with status "
+            f"{e.response.status_code}. Response: {e.response.text}"
+        )
+        return False
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            f"Delete knowledge base failed with RequestError: {str(e)}"
+        )
+        return False
+
+    except Exception as e:
+        logger.error(
+            "Delete knowledge base failed with an unexpected exception: "
+            f"{str(e)}"
+        )
+        return False
+
+
+def set_thread_knowledge_base(
+    thread_id: UUID,
+    knowledge_base_id: UUID | None,
+) -> dict:
+    """Bind, switch, or unbind a knowledge base for a thread."""
+
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {st.session_state['user'].access_token}",
+    }
+
+    data = {
+        "knowledge_base_id": (
+            str(knowledge_base_id)
+            if knowledge_base_id is not None
+            else None
+        )
+    }
+
+    try:
+        response = requests.patch(
+            f"{BASE_URL}/threads/{thread_id}/knowledge-base",
+            json=data,
+            headers=headers,
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            "Set thread knowledge base failed with status "
+            f"{e.response.status_code}. Response: {e.response.text}"
+        )
+        return {}
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            "Set thread knowledge base failed with RequestError: "
+            f"{str(e)}"
+        )
+        return {}
+
+    except Exception as e:
+        logger.error(
+            "Set thread knowledge base failed with an unexpected exception: "
+            f"{str(e)}"
+        )
+        return {}
 
 ## Documents ----------------------------------------------------------
+
+
+def upload_knowledge_base_document(
+    knowledge_base_id: UUID,
+    file: UploadedFile,
+) -> dict | None:
+    """Upload a document into a knowledge base."""
+
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {st.session_state['user'].access_token}",
+    }
+
+    try:
+        files = {
+            "file": (
+                file.name,
+                file.getvalue(),
+                file.type,
+            )
+        }
+
+        response = requests.post(
+            (
+                f"{BASE_URL}/documents/knowledge-bases/"
+                f"{knowledge_base_id}/upload"
+            ),
+            files=files,
+            headers=headers,
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+
+        return response.json()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            "Knowledge base document upload failed with status "
+            f"{e.response.status_code}. Response: {e.response.text}"
+        )
+        return {}
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            "Knowledge base document upload failed with RequestError: "
+            f"{str(e)}"
+        )
+        return None
+
+    except Exception as e:
+        logger.error(
+            "Knowledge base document upload failed with unexpected error: "
+            f"{str(e)}"
+        )
+        return None
+
+
+def list_knowledge_base_documents(
+    knowledge_base_id: UUID,
+) -> list | None:
+    """List documents belonging to a knowledge base."""
+
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {st.session_state['user'].access_token}",
+    }
+
+    try:
+        response = requests.get(
+            (
+                f"{BASE_URL}/documents/knowledge-bases/"
+                f"{knowledge_base_id}"
+            ),
+            headers=headers,
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+
+        return response.json()
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(
+            "List knowledge base documents failed with status "
+            f"{e.response.status_code}. Response: {e.response.text}"
+        )
+        return None
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            "List knowledge base documents failed with RequestError: "
+            f"{str(e)}"
+        )
+        return None
+
+    except Exception as e:
+        logger.error(
+            "List knowledge base documents failed with unexpected error: "
+            f"{str(e)}"
+        )
+        return None
 
 
 def upload_document(thread_id: UUID, file: UploadedFile) -> dict | None:

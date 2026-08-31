@@ -1,6 +1,9 @@
 import json
 from collections.abc import AsyncGenerator, AsyncIterator
 from uuid import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.threads import service as thread_service
 
 from app.db.checkpointer import get_checkpointer
 from fastapi import HTTPException
@@ -19,24 +22,53 @@ async def simple_chat_stream(prompt_input: PromptInput) -> AsyncGenerator:
             yield json.dumps(response) + "\n"
 
 
-async def chat_stream(thread_id: UUID, prompt_input: PromptInput, user_id: UUID) -> AsyncIterator:
+async def chat_stream(
+    thread_id: UUID,
+    prompt_input: PromptInput,
+    user_id: UUID,
+    session: AsyncSession,
+) -> AsyncIterator:
     """
     Streams the agent's execution steps and final response.
     """
+
+    # Verify thread ownership and resolve its selected knowledge base.
+    db_thread = await thread_service.get_thread(
+        thread_id=thread_id,
+        user_id=user_id,
+        session=session,
+    )
+
+    knowledge_base_id = (
+        str(db_thread.knowledge_base_id)
+        if db_thread.knowledge_base_id is not None
+        else None
+    )
+
     config = RunnableConfig(
         configurable={
             "thread_id": str(thread_id),
             "user_id": str(user_id),
+            "knowledge_base_id": knowledge_base_id,
             "top_k": prompt_input.top_k,
             "similarity_threshold": prompt_input.similarity_threshold,
             "rerank_top_n": prompt_input.rerank_top_n,
         }
     )
+
     checkpointer = await get_checkpointer()
-    graph = build_retrival_graph(checkpointer, prompt_input.model_name)
+    graph = build_retrival_graph(
+        checkpointer,
+        prompt_input.model_name,
+    )
 
     return graph.astream(
-        input={"messages": [HumanMessage(content=prompt_input.prompt)], "retry_count": 0},
+        input={
+            "messages": [
+                HumanMessage(content=prompt_input.prompt)
+            ],
+            "retry_count": 0,
+        },
         config=config,
         stream_mode=["updates", "messages"],
     )

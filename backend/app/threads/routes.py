@@ -6,7 +6,11 @@ from app.auth.dependencies import CurrentUserDep
 from app.db.main import SessionDep
 
 from . import service as thread_service
-from .schemas import ThreadPublic, ThreadUpdate
+from .schemas import (
+    ThreadKnowledgeBaseUpdate,
+    ThreadPublic,
+    ThreadUpdate,
+)
 
 thread_router = APIRouter()
 
@@ -30,6 +34,26 @@ async def get_thread(thread_id: UUID, current_user: CurrentUserDep, session: Ses
 async def update_thread(thread_data: ThreadUpdate, thread_id: UUID, current_user: CurrentUserDep, session: SessionDep):
     return await thread_service.update_thread(thread_data, thread_id, current_user.id, session)
 
+@thread_router.patch(
+    "/{thread_id}/knowledge-base",
+    response_model=ThreadPublic,
+)
+async def set_thread_knowledge_base(
+    thread_id: UUID,
+    knowledge_base_data: ThreadKnowledgeBaseUpdate,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+):
+    """
+    Bind, switch, or unbind a knowledge base for a thread.
+    """
+
+    return await thread_service.set_thread_knowledge_base(
+        thread_id=thread_id,
+        knowledge_base_data=knowledge_base_data,
+        user_id=current_user.id,
+        session=session,
+    )
 
 @thread_router.delete("/{thread_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_thread(request: Request, thread_id: UUID, current_user: CurrentUserDep, session: SessionDep):
