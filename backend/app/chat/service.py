@@ -57,10 +57,10 @@ async def chat_stream(
     )
 
     checkpointer = await get_checkpointer()
-    graph = build_retrival_graph(
-        checkpointer,
-        prompt_input.model_name,
-    )
+    graph = await build_retrival_graph(
+            checkpointer,
+            prompt_input.model_name,
+        )
 
     return graph.astream(
         input={

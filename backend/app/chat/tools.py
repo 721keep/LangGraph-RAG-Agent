@@ -417,5 +417,3 @@ async def retrieve_user_documents(query: str, config: RunnableConfig) -> str:
 
     return serialized_result
 
-
-tools = [retrieve_user_documents, tavily]

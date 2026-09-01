@@ -73,8 +73,43 @@ class ChatStreamResponse(StreamingResponse):
                         yield json.dumps(response) + "\n"
 
             elif isinstance(message, ToolMessage):
-                response = {"type": "tool_result", "name": message.name, "content": message.content}
-                yield json.dumps(response) + "\n"
+                response = {
+                    "type": "tool_result",
+                    "name": message.name,
+                    "content": message.content,
+                }
+
+                try:
+                    tool_data = json.loads(message.content)
+
+                    if (
+                        isinstance(tool_data, dict)
+                        and tool_data.get("tool_source") == "mcp"
+                    ):
+                        response.update(
+                            {
+                                "tool_source": "mcp",
+                                "server_name": tool_data.get(
+                                    "server_name"
+                                ),
+                                "status": tool_data.get("status"),
+                                "success": tool_data.get("success"),
+                                "latency_ms": tool_data.get(
+                                    "latency_ms"
+                                ),
+                                "error_reason": tool_data.get(
+                                    "error_reason"
+                                ),
+                            }
+                        )
+
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+                yield json.dumps(
+                    response,
+                    ensure_ascii=False,
+                ) + "\n"
 
             else:
                 response = {"type": message.type, "content": message.content}

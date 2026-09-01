@@ -5,8 +5,8 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import create_react_agent
 
+from app.tools.registry import get_agent_tools
 from .prompts import dynamic_system_prompt
-from .tools import tools
 
 
 def create_model(model_name: str, streaming: bool = False) -> BaseChatModel:
@@ -23,7 +23,7 @@ def create_model(model_name: str, streaming: bool = False) -> BaseChatModel:
     return model
 
 
-def build_retrival_graph(
+async def build_retrival_graph(
     checkpointer: BaseCheckpointSaver,
     model_name: str,
 ) -> CompiledStateGraph:
@@ -31,6 +31,7 @@ def build_retrival_graph(
 
     model = create_model(model_name=model_name)
 
+    tools = await get_agent_tools()
     agent = create_react_agent(
         model=model,
         tools=tools,

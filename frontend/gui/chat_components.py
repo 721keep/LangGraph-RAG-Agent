@@ -112,7 +112,23 @@ def authenticated_user_chat_interface_component():
 
                                         if not rendered:
                                             with st.expander(
-                                                "**Tool Result:** `retrieve_user_documents`",
+                                                "**Tool Result:** "
+                                                "`retrieve_user_documents`",
+                                                expanded=False,
+                                            ):
+                                                st.code(
+                                                    event["content"],
+                                                    language="json",
+                                                )
+
+                                    elif event.get("tool_source") == "mcp":
+                                        rendered = _render_mcp_tool_result(
+                                            event
+                                        )
+
+                                        if not rendered:
+                                            with st.expander(
+                                                f"**Tool Result:** `{event['name']}`",
                                                 expanded=False,
                                             ):
                                                 st.code(
@@ -155,6 +171,72 @@ def authenticated_user_chat_interface_component():
 
             with st.spinner("Generating response..."):
                 asyncio.run(fetch_stream())
+                
+def _render_mcp_tool_result(event: dict) -> bool:
+    """Render MCP tool execution observability."""
+
+    if event.get("tool_source") != "mcp":
+        return False
+
+    tool_name = event.get("name", "unknown")
+    server_name = event.get("server_name", "unknown")
+    status = event.get("status")
+    success = event.get("success")
+    latency_ms = event.get("latency_ms")
+    error_reason = event.get("error_reason")
+
+    try:
+        tool_data = json.loads(event.get("content", "{}"))
+    except (json.JSONDecodeError, TypeError):
+        tool_data = {}
+
+    st.markdown(
+        f"**🔌 MCP Tool:** `{tool_name}`"
+    )
+
+    metadata_parts = [
+        "Source: `MCP`",
+        f"Server: `{server_name}`",
+    ]
+
+    if status is not None:
+        metadata_parts.append(
+            f"Status: `{status}`"
+        )
+
+    if latency_ms is not None:
+        try:
+            metadata_parts.append(
+                f"Latency: `{float(latency_ms):.2f} ms`"
+            )
+        except (TypeError, ValueError):
+            pass
+
+    st.caption(" · ".join(metadata_parts))
+
+    if success is True:
+        st.success("MCP tool execution succeeded.")
+    elif success is False:
+        st.error("MCP tool execution failed.")
+
+        if error_reason:
+            st.caption(
+                f"Error reason: `{error_reason}`"
+            )
+
+    result = tool_data.get("result")
+
+    if result is not None:
+        with st.expander(
+            "**MCP Result**",
+            expanded=False,
+        ):
+            if isinstance(result, (dict, list)):
+                st.json(result)
+            else:
+                st.code(str(result))
+
+    return True
 
 def _render_retrieval_result(content: str) -> bool:
     """Render structured RAG retrieval results as observable source cards."""
