@@ -1,0 +1,145 @@
+{
+  "metrics": {
+    "total_cases": 8,
+    "tool_selection_accuracy": 1.0,
+    "wrong_tool_rate": 0.0,
+    "no_tool_accuracy": 1.0,
+    "argument_accuracy": 1.0,
+    "per_tool_accuracy": {
+      "retrieve_user_documents": {
+        "total": 2,
+        "correct": 2,
+        "accuracy": 1.0
+      },
+      "web_search": {
+        "total": 2,
+        "correct": 2,
+        "accuracy": 1.0
+      },
+      "get_server_status": {
+        "total": 2,
+        "correct": 2,
+        "accuracy": 1.0
+      },
+      "no_tool": {
+        "total": 2,
+        "correct": 2,
+        "accuracy": 1.0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "route_rag_001",
+      "category": "rag",
+      "query": "根据当前知识库文档，巡检过程中网络突然断开后，机器人最多还能继续执行原任务多久？",
+      "expected_tool": "retrieve_user_documents",
+      "actual_tool": "retrieve_user_documents",
+      "expected_args": null,
+      "actual_args": {
+        "query": "巡检过程中网络断开后机器人继续执行原任务时长"
+      },
+      "tool_correct": true,
+      "argument_checked": false,
+      "argument_correct": null
+    },
+    {
+      "id": "route_web_001",
+      "category": "web",
+      "query": "请搜索今天 OpenAI 的最新公开消息。",
+      "expected_tool": "web_search",
+      "actual_tool": "web_search",
+      "expected_args": null,
+      "actual_args": {
+        "query": "OpenAI 最新消息 2026年9月1日"
+      },
+      "tool_correct": true,
+      "argument_checked": false,
+      "argument_correct": null
+    },
+    {
+      "id": "route_mcp_001",
+      "category": "mcp",
+      "query": "请检查组件 backend 当前是否可用。",
+      "expected_tool": "get_server_status",
+      "actual_tool": "get_server_status",
+      "expected_args": {
+        "component": "backend"
+      },
+      "actual_args": {
+        "component": "backend"
+      },
+      "tool_correct": true,
+      "argument_checked": true,
+      "argument_correct": true
+    },
+    {
+      "id": "route_no_tool_001",
+      "category": "no_tool",
+      "query": "用一句话解释什么是递归。",
+      "expected_tool": null,
+      "actual_tool": null,
+      "expected_args": null,
+      "actual_args": null,
+      "tool_correct": true,
+      "argument_checked": false,
+      "argument_correct": null
+    },
+    {
+      "id": "route_rag_002",
+      "category": "rag",
+      "query": "请根据我上传的设备维护手册说明，设备出现异常告警后应该先执行什么操作？",
+      "expected_tool": "retrieve_user_documents",
+      "actual_tool": "retrieve_user_documents",
+      "expected_args": null,
+      "actual_args": {
+        "query": "设备出现异常告警后应该先执行什么操作"
+      },
+      "tool_correct": true,
+      "argument_checked": false,
+      "argument_correct": null
+    },
+    {
+      "id": "route_web_002",
+      "category": "web",
+      "query": "请查询今天 Anthropic 最新发布的公开消息。",
+      "expected_tool": "web_search",
+      "actual_tool": "web_search",
+      "expected_args": null,
+      "actual_args": {
+        "query": "Anthropic 最新公告 2026年9月1日"
+      },
+      "tool_correct": true,
+      "argument_checked": false,
+      "argument_correct": null
+    },
+    {
+      "id": "route_mcp_002",
+      "category": "mcp",
+      "query": "请检查组件 frontend 当前是否可用。",
+      "expected_tool": "get_server_status",
+      "actual_tool": "get_server_status",
+      "expected_args": {
+        "component": "frontend"
+      },
+      "actual_args": {
+        "component": "frontend"
+      },
+      "tool_correct": true,
+      "argument_checked": true,
+      "argument_correct": true
+    },
+    {
+      "id": "route_no_tool_002",
+      "category": "no_tool",
+      "query": "用一句话说明 Python 中列表和元组的主要区别。",
+      "expected_tool": null,
+      "actual_tool": null,
+      "expected_args": null,
+      "actual_args": null,
+      "tool_correct": true,
+      "argument_checked": false,
+      "argument_correct": null
+    }
+  ]
+}

@@ -24,10 +24,10 @@ def create_model(model_name: str, streaming: bool = False) -> BaseChatModel:
 
 
 async def build_retrival_graph(
-    checkpointer: BaseCheckpointSaver,
+    checkpointer: BaseCheckpointSaver | None,
     model_name: str,
+    interrupt_before: list[str] | None = None,
 ) -> CompiledStateGraph:
-    """Build a retrieval chain based on the provided model name."""
 
     model = create_model(model_name=model_name)
 
@@ -37,6 +37,7 @@ async def build_retrival_graph(
         tools=tools,
         prompt=dynamic_system_prompt,
         checkpointer=checkpointer,
+        interrupt_before=interrupt_before,
     )
 
     return agent

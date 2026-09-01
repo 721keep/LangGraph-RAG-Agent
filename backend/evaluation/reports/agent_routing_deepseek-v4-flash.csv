@@ -1,0 +1,9 @@
+﻿id,category,query,expected_tool,actual_tool,expected_args,actual_args,tool_correct,argument_checked,argument_correct
+route_rag_001,rag,根据当前知识库文档，巡检过程中网络突然断开后，机器人最多还能继续执行原任务多久？,retrieve_user_documents,retrieve_user_documents,null,"{""query"": ""巡检过程中网络断开后机器人继续执行原任务时长""}",True,False,
+route_web_001,web,请搜索今天 OpenAI 的最新公开消息。,web_search,web_search,null,"{""query"": ""OpenAI 最新消息 2026年9月1日""}",True,False,
+route_mcp_001,mcp,请检查组件 backend 当前是否可用。,get_server_status,get_server_status,"{""component"": ""backend""}","{""component"": ""backend""}",True,True,True
+route_no_tool_001,no_tool,用一句话解释什么是递归。,,,null,null,True,False,
+route_rag_002,rag,请根据我上传的设备维护手册说明，设备出现异常告警后应该先执行什么操作？,retrieve_user_documents,retrieve_user_documents,null,"{""query"": ""设备出现异常告警后应该先执行什么操作""}",True,False,
+route_web_002,web,请查询今天 Anthropic 最新发布的公开消息。,web_search,web_search,null,"{""query"": ""Anthropic 最新公告 2026年9月1日""}",True,False,
+route_mcp_002,mcp,请检查组件 frontend 当前是否可用。,get_server_status,get_server_status,"{""component"": ""frontend""}","{""component"": ""frontend""}",True,True,True
+route_no_tool_002,no_tool,用一句话说明 Python 中列表和元组的主要区别。,,,null,null,True,False,

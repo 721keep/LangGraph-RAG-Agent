@@ -1,0 +1,38 @@
+{
+  "metrics": {
+    "total_failure_cases": 4,
+    "passed_failure_cases": 4,
+    "failed_failure_cases": 0,
+    "failure_handling_pass_rate": 1.0
+  },
+  "results": [
+    {
+      "name": "tool_execution_error",
+      "script": "failure_smoke_test.py",
+      "passed": true,
+      "return_code": 0,
+      "error": null
+    },
+    {
+      "name": "invalid_arguments",
+      "script": "invalid_arguments_smoke_test.py",
+      "passed": true,
+      "return_code": 0,
+      "error": null
+    },
+    {
+      "name": "tool_timeout",
+      "script": "timeout_smoke_test.py",
+      "passed": true,
+      "return_code": 0,
+      "error": null
+    },
+    {
+      "name": "server_unavailable",
+      "script": "server_unavailable_smoke_test.py",
+      "passed": true,
+      "return_code": 0,
+      "error": null
+    }
+  ]
+}

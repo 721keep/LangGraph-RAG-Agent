@@ -1,0 +1,5 @@
+﻿name,script,passed,return_code,error
+tool_execution_error,failure_smoke_test.py,True,0,
+invalid_arguments,invalid_arguments_smoke_test.py,True,0,
+tool_timeout,timeout_smoke_test.py,True,0,
+server_unavailable,server_unavailable_smoke_test.py,True,0,
