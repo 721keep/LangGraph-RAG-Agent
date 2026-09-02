@@ -4,12 +4,28 @@ from typing import Any, AsyncGenerator, AsyncIterable
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from app.config import settings
 
+
+class ChatConfigResponse(BaseModel):
+    model_provider: str
+    model_names: list[str]
+    default_model: str | None
 
 class PromptInput(BaseModel):
     prompt: str
     model_name: str
+    @field_validator("model_name")
+    @classmethod
+    def validate_model_name(cls, model_name: str) -> str:
+        if model_name not in settings.model_names:
+            raise ValueError(
+                f"Unsupported model '{model_name}'. "
+                f"Available models: {settings.model_names}"
+            )
+
+        return model_name
 
     top_k: int = Field(
         default=3,

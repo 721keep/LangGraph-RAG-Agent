@@ -99,9 +99,50 @@ def authenticated_user_chat_interface_component():
 
                             if event_type == "tool_call":
                                 with steps_container:
-                                    st.markdown(
-                                        f"**Tool Call:** Running `{event['name']}` with arguments: `{event['args']}`"
+                                    tool_name = event.get(
+                                        "name",
+                                        "unknown",
                                     )
+
+                                    tool_labels = {
+                                        "retrieve_user_documents": (
+                                            "📚 Searching knowledge base"
+                                        ),
+                                        "web_search": (
+                                            "🌐 Searching the web"
+                                        ),
+                                        "get_server_status": (
+                                            "🔌 Checking MCP service"
+                                        ),
+                                    }
+
+                                    tool_label = tool_labels.get(
+                                        tool_name,
+                                        f"🧰 Running {tool_name}",
+                                    )
+
+                                    st.markdown(
+                                        f"**{tool_label}**"
+                                    )
+
+                                    with st.expander(
+                                        "Tool input",
+                                        expanded=False,
+                                    ):
+                                        tool_args = event.get(
+                                            "args",
+                                            {},
+                                        )
+
+                                        if isinstance(
+                                            tool_args,
+                                            (dict, list),
+                                        ):
+                                            st.json(tool_args)
+                                        else:
+                                            st.code(
+                                                str(tool_args)
+                                            )
 
                             elif event_type == "tool_result":
                                 with steps_container:
@@ -114,6 +155,20 @@ def authenticated_user_chat_interface_component():
                                             with st.expander(
                                                 "**Tool Result:** "
                                                 "`retrieve_user_documents`",
+                                                expanded=False,
+                                            ):
+                                                st.code(
+                                                    event["content"],
+                                                    language="json",
+                                                )
+                                    elif event["name"] == "web_search":
+                                        rendered = _render_web_search_result(
+                                            event["content"]
+                                        )
+
+                                        if not rendered:
+                                            with st.expander(
+                                                "Web search result",
                                                 expanded=False,
                                             ):
                                                 st.code(
@@ -135,7 +190,6 @@ def authenticated_user_chat_interface_component():
                                                     event["content"],
                                                     language="json",
                                                 )
-
                                     else:
                                         with st.expander(
                                             f"**Tool Result:** `{event['name']}`",
@@ -171,70 +225,232 @@ def authenticated_user_chat_interface_component():
 
             with st.spinner("Generating response..."):
                 asyncio.run(fetch_stream())
+
+def _render_web_search_result(content: str) -> bool:
+    """Render web search results in a user-friendly form."""
+
+    try:
+        search_data = json.loads(content)
+    except (json.JSONDecodeError, TypeError):
+        return False
+
+    if isinstance(search_data, dict):
+        results = search_data.get(
+            "results",
+            [],
+        )
+    elif isinstance(search_data, list):
+        results = search_data
+    else:
+        return False
+
+    if not results:
+        st.markdown(
+            "**🌐 Web search complete**"
+        )
+        st.caption(
+            "No relevant public web sources were returned."
+        )
+        return True
+
+    st.markdown(
+        "**🌐 Web search complete**"
+    )
+
+    st.caption(
+        f"{len(results)} public web source"
+        f"{'s' if len(results) != 1 else ''} retrieved."
+    )
+
+    for index, result in enumerate(
+        results,
+        start=1,
+    ):
+        if not isinstance(result, dict):
+            continue
+
+        title = result.get(
+            "title",
+            f"Web source {index}",
+        )
+
+        url = result.get("url")
+        snippet = result.get(
+            "content",
+            "",
+        )
+
+        score = result.get("score")
+
+        with st.expander(
+            f"🌐 {index}. {title}",
+            expanded=False,
+        ):
+            if url:
+                st.markdown(
+                    f"[Open source]({url})"
+                )
+
+            if snippet:
+                st.write(snippet)
+
+            if score is not None:
+                try:
+                    st.caption(
+                        "Relevance score: "
+                        f"{float(score):.3f}"
+                    )
+                except (TypeError, ValueError):
+                    pass
+
+    return True
                 
 def _render_mcp_tool_result(event: dict) -> bool:
-    """Render MCP tool execution observability."""
+    """Render MCP tool execution in a user-friendly form."""
 
     if event.get("tool_source") != "mcp":
         return False
 
-    tool_name = event.get("name", "unknown")
-    server_name = event.get("server_name", "unknown")
+    tool_name = event.get(
+        "name",
+        "unknown",
+    )
+
+    server_name = event.get(
+        "server_name",
+        "unknown",
+    )
+
     status = event.get("status")
     success = event.get("success")
     latency_ms = event.get("latency_ms")
     error_reason = event.get("error_reason")
 
     try:
-        tool_data = json.loads(event.get("content", "{}"))
+        tool_data = json.loads(
+            event.get("content", "{}")
+        )
     except (json.JSONDecodeError, TypeError):
         tool_data = {}
 
-    st.markdown(
-        f"**🔌 MCP Tool:** `{tool_name}`"
-    )
-
-    metadata_parts = [
-        "Source: `MCP`",
-        f"Server: `{server_name}`",
-    ]
-
-    if status is not None:
-        metadata_parts.append(
-            f"Status: `{status}`"
+    # ---------------------------------------------------------
+    # User-facing execution status
+    # ---------------------------------------------------------
+    if success is True:
+        st.markdown(
+            f"**🔌 MCP tool completed:** `{tool_name}`"
         )
 
-    if latency_ms is not None:
-        try:
-            metadata_parts.append(
-                f"Latency: `{float(latency_ms):.2f} ms`"
-            )
-        except (TypeError, ValueError):
-            pass
+        st.caption(
+            "External tool execution completed successfully."
+        )
 
-    st.caption(" · ".join(metadata_parts))
-
-    if success is True:
-        st.success("MCP tool execution succeeded.")
     elif success is False:
-        st.error("MCP tool execution failed.")
+        error_messages = {
+            "tool_execution_error": (
+                "The external tool encountered an error "
+                "while processing the request."
+            ),
+            "invalid_arguments": (
+                "The tool could not run because the provided "
+                "arguments were invalid."
+            ),
+            "tool_timeout": (
+                "The external tool took too long to respond."
+            ),
+            "server_unavailable": (
+                "The MCP service is currently unavailable."
+            ),
+        }
+
+        user_message = error_messages.get(
+            error_reason,
+            "The external tool could not complete the request.",
+        )
+
+        st.markdown(
+            f"**⚠️ MCP tool unavailable:** `{tool_name}`"
+        )
+
+        st.error(user_message)
+
+        if error_reason in {
+            "tool_timeout",
+            "server_unavailable",
+        }:
+            st.caption(
+                "Please try again shortly."
+            )
+        else:
+            st.caption(
+                "The Agent could not complete this tool action."
+            )
+
+    else:
+        st.markdown(
+            f"**🔌 MCP tool finished:** `{tool_name}`"
+        )
+
+    # ---------------------------------------------------------
+    # Technical observability
+    # ---------------------------------------------------------
+    with st.expander(
+        "MCP execution details",
+        expanded=False,
+    ):
+        detail_parts = [
+            "Source: `MCP`",
+            f"Server: `{server_name}`",
+            f"Tool: `{tool_name}`",
+        ]
+
+        if status is not None:
+            detail_parts.append(
+                f"Status: `{status}`"
+            )
+
+        if latency_ms is not None:
+            try:
+                detail_parts.append(
+                    "Latency: "
+                    f"`{float(latency_ms):.2f} ms`"
+                )
+            except (TypeError, ValueError):
+                pass
+
+        st.caption(
+            " · ".join(detail_parts)
+        )
 
         if error_reason:
-            st.caption(
-                f"Error reason: `{error_reason}`"
+            st.markdown(
+                "**Technical error**"
             )
 
+            st.caption(
+                f"Reason: `{error_reason}`"
+            )
+
+    # ---------------------------------------------------------
+    # Tool result
+    # ---------------------------------------------------------
     result = tool_data.get("result")
 
     if result is not None:
         with st.expander(
-            "**MCP Result**",
+            "MCP result",
             expanded=False,
         ):
-            if isinstance(result, (dict, list)):
+            if isinstance(
+                result,
+                (dict, list),
+            ):
                 st.json(result)
+
             else:
-                st.code(str(result))
+                st.code(
+                    str(result)
+                )
 
     return True
 
@@ -296,31 +512,60 @@ def _render_retrieval_result(content: str) -> bool:
         "evidence_gate_passed"
     )
 
-    st.markdown(
-        f"**🔎 Retrieved Sources:** {retrieved_count} chunk(s)"
-    )
+    # ---------------------------------------------------------
+    # User-facing retrieval status
+    # ---------------------------------------------------------
+    if status == "ok":
+        st.markdown(
+            "**📚 Knowledge base search complete**"
+        )
 
+        st.caption(
+            f"{retrieved_count} evidence chunk"
+            f"{'s' if retrieved_count != 1 else ''} selected."
+        )
+
+    elif status == "no_evidence":
+        st.markdown(
+            "**📚 Knowledge base search complete**"
+        )
+
+        st.caption(
+            "No reliable evidence was selected."
+        )
+
+    else:
+        st.markdown(
+            "**⚠️ Knowledge base search failed**"
+        )
+
+    # ---------------------------------------------------------
+    # Technical retrieval observability
+    # ---------------------------------------------------------
     summary_parts = []
 
     if query:
-        summary_parts.append(f"Query: `{query}`")
+        summary_parts.append(
+            f"Query: `{query}`"
+        )
 
     if top_k is not None:
-        summary_parts.append(f"Top-K: `{top_k}`")
+        summary_parts.append(
+            f"Top-K: `{top_k}`"
+        )
 
     if similarity_threshold is not None:
         summary_parts.append(
-            f"Threshold: `{float(similarity_threshold):.2f}`"
+            "Threshold: "
+            f"`{float(similarity_threshold):.2f}`"
         )
+
     if rerank_evidence_threshold is not None:
         summary_parts.append(
             "Evidence Threshold: "
             f"`{float(rerank_evidence_threshold):.2f}`"
         )
-    if summary_parts:
-        st.caption(" · ".join(summary_parts))
 
-    # Retrieval filtering statistics
     stats_parts = [
         f"Vector Candidates: `{candidate_count}`",
         f"Threshold Passed: `{threshold_passed_count}`",
@@ -346,6 +591,7 @@ def _render_retrieval_result(content: str) -> bool:
         stats_parts.append(
             "Evidence Gate: `PASS`"
         )
+
     elif evidence_gate_passed is False:
         stats_parts.append(
             "Evidence Gate: `REJECT`"
@@ -355,20 +601,47 @@ def _render_retrieval_result(content: str) -> bool:
         f"Final Sources: `{retrieved_count}`"
     )
 
-    st.caption(" · ".join(stats_parts))
+    with st.expander(
+        "Retrieval details",
+        expanded=False,
+    ):
+        if summary_parts:
+            st.caption(
+                " · ".join(summary_parts)
+            )
+
+        st.caption(
+            " · ".join(stats_parts)
+        )
 
     if status == "error":
-        if reason == "vector_search_failed":
-            st.error(
-                "Document retrieval failed during vector search."
-            )
-        elif reason == "reranker_failed":
-            st.error(
-                "Document retrieval failed during reranking."
-            )
-        else:
-            st.error(
-                "Document retrieval encountered a technical error."
+        error_messages = {
+            "vector_search_failed": (
+                "Knowledge base search is temporarily unavailable."
+            ),
+            "reranker_failed": (
+                "The retrieved evidence could not be ranked reliably."
+            ),
+        }
+
+        user_message = error_messages.get(
+            reason,
+            "Knowledge base retrieval encountered a technical problem.",
+        )
+
+        st.error(user_message)
+
+        st.caption(
+            "Please try again. If the problem persists, "
+            "check the retrieval service configuration."
+        )
+
+        with st.expander(
+            "Technical details",
+            expanded=False,
+        ):
+            st.caption(
+                f"Reason: `{reason or 'unknown'}`"
             )
 
         return True
@@ -376,45 +649,63 @@ def _render_retrieval_result(content: str) -> bool:
     if status == "no_evidence":
         if reason == "knowledge_base_not_selected":
             st.info(
-                "No knowledge base is selected "
-                "for this conversation."
+                "No knowledge base is connected to this conversation."
+            )
+
+            st.caption(
+                "Select a knowledge base from the sidebar "
+                "if you want the Agent to answer from private documents."
             )
 
         elif reason == "no_candidates":
             st.info(
-                "No candidate document chunks were retrieved."
+                "No matching content was found in the selected knowledge base."
+            )
+
+            st.caption(
+                "Try rephrasing the question or check whether "
+                "the relevant document has been uploaded."
             )
 
         elif reason == "below_similarity_threshold":
             st.info(
-                "No retrieved chunks passed the "
-                "similarity threshold."
+                "Some document matches were found, "
+                "but none were relevant enough to use safely."
+            )
+
+            st.caption(
+                "Try a more specific question or adjust "
+                "the retrieval threshold if appropriate."
             )
 
         elif reason == "below_rerank_evidence_threshold":
+            st.info(
+                "Potential evidence was found, "
+                "but its confidence was too low to support an answer."
+            )
+
             if (
                 top_rerank_score is not None
                 and rerank_evidence_threshold is not None
             ):
-                st.info(
-                    "Candidate chunks passed vector filtering, "
-                    "but the reranker evidence confidence was "
-                    "too low. "
-                    f"Top rerank score: "
-                    f"{float(top_rerank_score):.3f}; "
-                    f"required: "
-                    f"{float(rerank_evidence_threshold):.3f}."
-                )
-            else:
-                st.info(
-                    "Candidate chunks were rejected by "
-                    "the reranker evidence gate."
-                )
+                with st.expander(
+                    "Evidence confidence details",
+                    expanded=False,
+                ):
+                    st.caption(
+                        "Top rerank score: "
+                        f"`{float(top_rerank_score):.3f}`"
+                    )
+
+                    st.caption(
+                        "Required evidence score: "
+                        f"`{float(rerank_evidence_threshold):.3f}`"
+                    )
 
         else:
             st.info(
-                "No sufficiently reliable document "
-                "evidence was found."
+                "No sufficiently reliable evidence was found "
+                "in the selected knowledge base."
             )
 
         return True

@@ -1,6 +1,5 @@
 import api_utils
 import streamlit as st
-from config import settings
 from uuid import UUID
 
 from state_management import (
@@ -15,7 +14,7 @@ from state_management import (
 
 
 def display_sidebar():
-    st.sidebar.title("🔗Langgraph RAG Agent")
+    st.sidebar.title("🤖 LangGraph Agent")
 
     if st.session_state["user"].is_authenticated:
         greeting_component()
@@ -32,7 +31,7 @@ def display_sidebar():
 
 
 def authentication_component():
-    st.sidebar.subheader("🔒 Authentication", divider="rainbow")
+    st.sidebar.subheader("🔒 Authentication", divider="gray")
     col1, col2 = st.sidebar.columns(2)
     if col1.button("Login"):
         st.session_state["page"] = Page.LOGIN
@@ -42,53 +41,141 @@ def authentication_component():
 
 
 def greeting_component():
-    st.sidebar.subheader(f"👋 Welcome {st.session_state['user'].username}", divider="rainbow")
+    st.sidebar.subheader(f"👋 Welcome {st.session_state['user'].username}", divider="gray")
     if st.sidebar.button("New Chat"):
         new_chat()
 
 
 def model_selection_component():
-    st.sidebar.subheader("🤖 Select Model", divider="rainbow")
-    st.session_state["model_name"] = st.sidebar.selectbox(
-        "Select Model",
-        options=settings.model_names,
-        key="model",
+    st.sidebar.subheader(
+        "🤖 Model",
+        divider="gray",
+    )
+
+    chat_config = st.session_state.get(
+        "chat_config",
+        {},
+    )
+
+    model_names = chat_config.get(
+        "model_names",
+        [],
+    )
+
+    model_provider = chat_config.get(
+        "model_provider",
+    )
+
+    default_model = chat_config.get(
+        "default_model",
+    )
+
+    if not model_names:
+        st.session_state["model_name"] = None
+
+        st.sidebar.error(
+            "Unable to load available models."
+        )
+        return
+
+    current_model = st.session_state.get(
+        "model_name",
+    )
+
+    if current_model not in model_names:
+        current_model = (
+            default_model
+            if default_model in model_names
+            else model_names[0]
+        )
+
+        st.session_state["model_name"] = current_model
+
+    selected_index = model_names.index(
+        current_model
+    )
+
+    selected_model = st.sidebar.selectbox(
+        "Chat Model",
+        options=model_names,
+        index=selected_index,
+        key="model_selector",
         label_visibility="collapsed",
     )
 
+    st.session_state["model_name"] = selected_model
+
+    if model_provider:
+        st.sidebar.caption(
+            f"Provider: {model_provider}"
+        )
+
 def retrieval_settings_component():
-    st.sidebar.subheader("🔎 Retrieval Settings", divider="rainbow")
-
-    st.sidebar.select_slider(
-        "Top-K",
-        options=[1, 3, 5, 8, 10],
-        value=3,
-        key="top_k",
-        help="Maximum number of document chunks retrieved for each RAG query.",
+    top_k = st.session_state.get(
+        "top_k",
+        3,
     )
 
-    st.sidebar.slider(
-        "Similarity Threshold",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.50,
-        step=0.05,
-        key="similarity_threshold",
-        help="Minimum relevance score required for a retrieved chunk to be used.",
+    similarity_threshold = st.session_state.get(
+        "similarity_threshold",
+        0.50,
     )
 
-    st.sidebar.select_slider(
-        "Rerank Top-N",
-        options=[1, 3, 5],
-        value=3,
-        key="rerank_top_n",
-        help="Maximum number of reranked chunks passed to the LLM.",
+    rerank_top_n = st.session_state.get(
+        "rerank_top_n",
+        3,
     )
+
+    st.sidebar.caption(
+        "⚙️ "
+        f"Top-K {top_k} · "
+        f"Threshold {similarity_threshold:.2f} · "
+        f"Rerank {rerank_top_n}"
+    )
+
+    with st.sidebar.expander(
+        "🔎 Retrieval Settings",
+        expanded=False,
+    ):
+        st.select_slider(
+            "Top-K",
+            options=[1, 3, 5, 8, 10],
+            value=top_k,
+            key="top_k",
+            help=(
+                "Maximum number of document chunks "
+                "retrieved for each RAG query."
+            ),
+        )
+
+        st.slider(
+            "Similarity Threshold",
+            min_value=0.0,
+            max_value=1.0,
+            value=similarity_threshold,
+            step=0.05,
+            key="similarity_threshold",
+            help=(
+                "Minimum relevance score required "
+                "for a retrieved chunk to be used."
+            ),
+        )
+
+        st.select_slider(
+            "Rerank Top-N",
+            options=[1, 3, 5],
+            value=rerank_top_n,
+            key="rerank_top_n",
+            help=(
+                "Maximum number of reranked chunks "
+                "passed to the LLM."
+            ),
+        )
 
 def knowledge_base_component():
     st.sidebar.subheader(
         "📚 Knowledge Base",
-        divider="rainbow",
+        divider="gray",
     )
 
     knowledge_bases = (
@@ -301,141 +388,156 @@ def knowledge_base_component():
 
 
 def chat_history_component():
-    st.sidebar.subheader("🗨️ Chat History", divider="rainbow")
-    threads = st.session_state["user"].threads
+    st.sidebar.subheader(
+        "💬 Conversations",
+        divider="gray",
+    )
 
-    if threads:
+    threads = st.session_state["user"].threads
+    current_thread_id = st.session_state["thread"].id
+
+    if not threads:
+        st.sidebar.caption(
+            "No conversations yet."
+        )
+        return
+
+    # ---------------------------------------------------------
+    # Conversation selector
+    # ---------------------------------------------------------
+    for thread in threads:
+        thread_id = thread["id"]
+        title = thread["title"] or "Untitled conversation"
+
+        is_current = (
+            current_thread_id is not None
+            and str(current_thread_id) == str(thread_id)
+        )
+
+        button_label = (
+            f"▸ {title}"
+            if is_current
+            else title
+        )
+
+        if st.sidebar.button(
+            button_label,
+            key=f"select_thread_{thread_id}",
+            use_container_width=True,
+            type="secondary",
+        ):
+            if not is_current:
+                change_thread(thread_id)
+                st.rerun()
+
+    # ---------------------------------------------------------
+    # Conversation management
+    # ---------------------------------------------------------
+    with st.sidebar.expander(
+        "⚙️ Manage conversations",
+        expanded=False,
+    ):
+        st.caption(
+            "Delete conversations you no longer need."
+        )
+
         for thread in threads:
-            col1, col2, col3 = st.sidebar.columns([0.15, 0.70, 0.15])
+            thread_id = thread["id"]
+            title = thread["title"] or "Untitled conversation"
+
+            col1, col2 = st.columns(
+                [0.80, 0.20]
+            )
+
             with col1:
-                if st.button("✅", key=f"select_{thread['id']}"):
-                    change_thread(thread["id"])
+                st.caption(title)
+
             with col2:
-                st.markdown(f"{thread['title']}")
-            with col3:
-                if st.button("❌", key=f"delete_{thread['id']}"):
+                if st.button(
+                    "🗑️",
+                    key=f"delete_thread_{thread_id}",
+                    help="Delete conversation",
+                ):
                     with st.spinner(""):
-                        delete_response = api_utils.delete_thread(thread["id"])
-                        if delete_response.get("status") == "ok":
-                            success_message = f"Thread with ID {thread['title']} deleted successfully."
-                            st.sidebar.success(success_message)
-                            update_user_threads()
+                        delete_response = (
+                            api_utils.delete_thread(
+                                thread_id
+                            )
+                        )
+
+                    if (
+                        delete_response.get("status")
+                        == "ok"
+                    ):
+                        update_user_threads()
+
+                        if (
+                            current_thread_id is not None
+                            and str(current_thread_id)
+                            == str(thread_id)
+                        ):
                             new_chat()
-                            st.rerun()
-                        else:
-                            st.sidebar.error("Failed to delete the thread")
+
+                        st.rerun()
+
+                    else:
+                        st.error(
+                            "Failed to delete conversation."
+                        )
 
 
 def document_list_component():
-    st.sidebar.subheader(
-        "📂 Documents",
-        divider="rainbow",
-    )
-
     thread = st.session_state["thread"]
     knowledge_base_id = thread.knowledge_base_id
 
     if knowledge_base_id is None:
         st.sidebar.caption(
-            "Select a knowledge base to manage documents."
+            "📂 Documents · Select a knowledge base first"
         )
         return
 
-    # ---------------------------------------------------------
-    # Upload Document
-    # ---------------------------------------------------------
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload document",
-        type=["pdf", "docx", "txt"],
-        key=f"kb_upload_{knowledge_base_id}",
-    )
-
-    if uploaded_file is not None:
-        if st.sidebar.button(
-            "Upload",
-            key=f"upload_button_{knowledge_base_id}",
-        ):
-            with st.spinner(
-                "Indexing document..."
-            ):
-                upload_response = (
-                    api_utils.upload_knowledge_base_document(
-                        knowledge_base_id=knowledge_base_id,
-                        file=uploaded_file,
-                    )
-                )
-
-            document_id = (
-                upload_response.get("document_id")
-                if upload_response
-                else None
-            )
-
-            if document_id:
-                st.sidebar.success(
-                    f"{uploaded_file.name} uploaded successfully."
-                )
-
-                update_knowledge_base_document_list(
-                    knowledge_base_id
-                )
-
-                st.rerun()
-
-            else:
-                st.sidebar.error(
-                    "Failed to upload document."
-                )
-
-    # ---------------------------------------------------------
-    # Document List
-    # ---------------------------------------------------------
     documents = thread.documents
 
-    if not documents:
-        st.sidebar.write(
-            "No documents uploaded yet."
-        )
-        return
+    document_count = len(documents)
 
-    for number, doc in enumerate(
-        documents,
-        start=1,
+    with st.sidebar.expander(
+        f"📂 Documents · {document_count}",
+        expanded=False,
     ):
-        col1, col2 = st.sidebar.columns(
-            [0.85, 0.15]
+        # -----------------------------------------------------
+        # Upload Document
+        # -----------------------------------------------------
+        uploaded_file = st.file_uploader(
+            "Upload document",
+            type=["pdf", "docx", "txt"],
+            key=f"kb_upload_{knowledge_base_id}",
         )
 
-        with col1:
-            status = doc.get(
-                "status",
-                "ready",
-            )
-
-            st.markdown(
-                f"{number}. {doc['file_name']}"
-            )
-
-            if status != "ready":
-                st.caption(
-                    f"Status: {status}"
-                )
-
-        with col2:
+        if uploaded_file is not None:
             if st.button(
-                "❌",
-                key=f"delete_document_{doc['id']}",
+                "Upload",
+                key=f"upload_button_{knowledge_base_id}",
+                use_container_width=True,
             ):
-                with st.spinner(""):
-                    delete_response = (
-                        api_utils.delete_document(
-                            doc["id"]
+                with st.spinner(
+                    "Indexing document..."
+                ):
+                    upload_response = (
+                        api_utils.upload_knowledge_base_document(
+                            knowledge_base_id=knowledge_base_id,
+                            file=uploaded_file,
                         )
                     )
 
-                if delete_response:
-                    st.sidebar.success(
-                        "Document deleted successfully."
+                document_id = (
+                    upload_response.get("document_id")
+                    if upload_response
+                    else None
+                )
+
+                if document_id:
+                    st.success(
+                        f"{uploaded_file.name} uploaded successfully."
                     )
 
                     update_knowledge_base_document_list(
@@ -445,13 +547,86 @@ def document_list_component():
                     st.rerun()
 
                 else:
-                    st.sidebar.error(
-                        "Failed to delete the document."
+                    st.error(
+                        "Failed to upload document."
                     )
+
+        # -----------------------------------------------------
+        # Document List
+        # -----------------------------------------------------
+        if not documents:
+            st.caption(
+                "No documents uploaded yet."
+            )
+            return
+
+        st.caption(
+            f"{document_count} document"
+            f"{'s' if document_count != 1 else ''} available"
+        )
+
+        for number, doc in enumerate(
+            documents,
+            start=1,
+        ):
+            col1, col2 = st.columns(
+                [0.82, 0.18]
+            )
+
+            with col1:
+                status = doc.get(
+                    "status",
+                    "ready",
+                )
+
+                st.markdown(
+                    f"{number}. {doc['file_name']}"
+                )
+
+                if status != "ready":
+                    st.caption(
+                        f"Status: {status}"
+                    )
+
+            with col2:
+                if st.button(
+                    "🗑️",
+                    key=f"delete_document_{doc['id']}",
+                    help="Delete document",
+                ):
+                    with st.spinner(""):
+                        delete_response = (
+                            api_utils.delete_document(
+                                doc["id"]
+                            )
+                        )
+
+                    if delete_response:
+                        st.success(
+                            "Document deleted successfully."
+                        )
+
+                        update_knowledge_base_document_list(
+                            knowledge_base_id
+                        )
+
+                        st.rerun()
+
+                    else:
+                        st.error(
+                            "Failed to delete the document."
+                        )
 
 
 def logout_component():
-    st.sidebar.subheader("❌ Logout", divider="rainbow")
-    if st.sidebar.button("logout"):
+    st.sidebar.subheader(
+        "Account",
+        divider="gray",
+    )
+
+    if st.sidebar.button(
+        "↪ Sign out",
+        use_container_width=True,
+    ):
         logout_user()
         st.rerun()

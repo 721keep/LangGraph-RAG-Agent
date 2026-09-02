@@ -5,7 +5,13 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from . import service as chat_service
-from .schemas import ChatStreamResponse, Message, PromptInput
+from .schemas import (
+    ChatConfigResponse,
+    ChatStreamResponse,
+    Message,
+    PromptInput,
+)
+from app.config import settings
 from app.db.main import SessionDep
 chat_router = APIRouter()
 
@@ -16,6 +22,17 @@ async def simple_chat_stream(prompt_input: PromptInput):
         chat_service.simple_chat_stream(prompt_input),
     )
 
+@chat_router.get("/config", response_model=ChatConfigResponse)
+async def get_chat_config() -> ChatConfigResponse:
+    return ChatConfigResponse(
+        model_provider=settings.model_provider,
+        model_names=settings.model_names,
+        default_model=(
+            settings.model_names[0]
+            if settings.model_names
+            else None
+        ),
+    )
 
 @chat_router.post("/{thread_id}")
 async def chat_stream(

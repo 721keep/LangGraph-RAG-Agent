@@ -85,6 +85,23 @@ def login_user(email: str, password: str) -> dict:
 
 ## Chat --------------------------------------------------------------------
 
+def get_chat_config() -> dict:
+    """Retrieve the available chat model configuration."""
+
+    try:
+        response = requests.get(
+            f"{BASE_URL}/chat/config",
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+
+        return response.json()
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            f"Failed to retrieve chat config: {str(e)}"
+        )
+        return {}
 
 async def simple_chat_stream(chat_data: dict):
     """

@@ -3,9 +3,7 @@ from uuid import UUID
 
 import api_utils
 import streamlit as st
-from config import settings
 
-MODEL_NAMES = settings.model_names or ["gpt-4o-mini"]
 
 
 class Page(StrEnum):
@@ -49,6 +47,19 @@ class Thread:
         self.messages = messages or []
         self.documents = documents or []
 
+def load_chat_config() -> dict:
+    """Load chat model configuration from the backend."""
+
+    chat_config = api_utils.get_chat_config()
+
+    if not chat_config:
+        return {
+            "model_provider": None,
+            "model_names": [],
+            "default_model": None,
+        }
+
+    return chat_config
 
 def initialize_state() -> None:
     if "page" not in st.session_state:
@@ -60,8 +71,29 @@ def initialize_state() -> None:
     if "thread" not in st.session_state:
         st.session_state["thread"] = Thread()
 
+    if "chat_config" not in st.session_state:
+        st.session_state["chat_config"] = load_chat_config()
+
     if "model_name" not in st.session_state:
-        st.session_state["model_name"] = MODEL_NAMES[0]
+        chat_config = st.session_state["chat_config"]
+
+        model_names = chat_config.get(
+            "model_names",
+            [],
+        )
+
+        default_model = chat_config.get(
+            "default_model"
+        )
+
+        if default_model in model_names:
+            st.session_state["model_name"] = default_model
+
+        elif model_names:
+            st.session_state["model_name"] = model_names[0]
+
+        else:
+            st.session_state["model_name"] = None
 
 
 def new_chat():
@@ -177,4 +209,25 @@ def logout_user() -> None:
     st.session_state["page"] = Page.HOME
     st.session_state["user"] = User()
     st.session_state["thread"] = Thread()
-    st.session_state["model_name"] = MODEL_NAMES[0]
+    chat_config = st.session_state.get(
+        "chat_config",
+        {},
+    )
+
+    model_names = chat_config.get(
+        "model_names",
+        [],
+    )
+
+    default_model = chat_config.get(
+        "default_model"
+    )
+
+    if default_model in model_names:
+        st.session_state["model_name"] = default_model
+
+    elif model_names:
+        st.session_state["model_name"] = model_names[0]
+
+    else:
+        st.session_state["model_name"] = None
