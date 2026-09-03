@@ -62,8 +62,6 @@ services:
     container_name: langgraph_frontend
     environment:
       - BACKEND_BASE_URL=http://backend:8000/api/v1
-      # REMOVED: ${BACKEND_BASE_URL:-http://backend:8000/api/v1}
-      - MODEL_NAMES=${MODEL_NAMES:-["gpt-4o", "gpt-4o-mini"]}
     ports:
       - "8501:8501"
     volumes:
