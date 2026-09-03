@@ -500,15 +500,27 @@ The authenticated workspace exposes the active model, knowledge base, retrieval 
 
 ### RAG Retrieval & Evidence
 
-Knowledge base retrieval exposes the selected evidence together with retrieval and reranking information.
+Knowledge base retrieval exposes selected evidence together with retrieval metadata, rerank scores, and citation information.
 
 ![RAG Retrieval](./screenshots/rag-retrieval.png)
 
-### Agent Tool Execution
+### MCP Tool Execution
 
-Tool execution is presented through structured user-facing cards instead of raw debugging output.
+MCP tool calls are rendered as structured execution cards with tool status, server information, latency, and execution details.
 
-![Agent Tools](./screenshots/agent-tools.png)
+![MCP Tool](./screenshots/mcp-tool.png)
+
+### Web Search
+
+Web search results are presented as structured source cards instead of raw tool output.
+
+![Web Search](./screenshots/web-search.png)
+
+### Unauthenticated Home
+
+The public landing page provides authentication entry points and a concise overview of the Agent platform.
+
+![Unauthenticated Home](./screenshots/home.png)
 
 ## 📝 License
 
