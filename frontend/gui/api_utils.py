@@ -11,7 +11,10 @@ BASE_URL = settings.backend_base_url
 TIMEOUT = 30
 UPLOAD_TIMEOUT = (settings.document_upload_connect_timeout, settings.document_upload_read_timeout)
 
+from runtime_errors import MESSAGES as RUNTIME_ERROR_MESSAGES
+
 UPLOAD_ERROR_MESSAGES = {
+    **RUNTIME_ERROR_MESSAGES,
     "embedding_quota_exhausted": "Embedding 额度不足，请联系管理员检查服务额度。",
     "embedding_auth_failed": "Embedding 服务鉴权失败，请联系管理员检查凭据与访问权限。",
     "embedding_failed": "Embedding 服务调用失败，文档尚未完成索引。",
@@ -195,6 +198,16 @@ async def simple_chat_stream(chat_data: dict):
                     if line:
                         yield line
         except httpx.HTTPStatusError as e:
+            await e.response.aread()
+            try:
+                code = e.response.json().get('detail', {}).get('error_code')
+            except (ValueError, AttributeError):
+                code = None
+            from runtime_errors import MESSAGES
+            if isinstance(code, str) and code in MESSAGES:
+                import json
+                yield json.dumps({'type': 'error', 'code': code})
+                return
             raise Exception(
                 f"Chat server responded with error: {e.response.status_code} {e.response.reason_phrase}"
             ) from e
@@ -224,6 +237,16 @@ async def chat_stream(chat_data: dict, thread_id: UUID):
                     if line:
                         yield line
         except httpx.HTTPStatusError as e:
+            await e.response.aread()
+            try:
+                code = e.response.json().get('detail', {}).get('error_code')
+            except (ValueError, AttributeError):
+                code = None
+            from runtime_errors import MESSAGES
+            if isinstance(code, str) and code in MESSAGES:
+                import json
+                yield json.dumps({'type': 'error', 'code': code})
+                return
             raise Exception(
                 f"Chat server responded with error: {e.response.status_code} {e.response.reason_phrase}"
             ) from e

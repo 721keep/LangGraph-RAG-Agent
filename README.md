@@ -85,10 +85,17 @@ HTTP Transport 阻断模型外发，Chat/上传返回受控 503。登录、知�
 R2 的 `bounded` 入口只用于已授权验收，限定用户、PDF、问题、HTTP 次数与 Token；历史账本已封存，
 不能重置或重新 arm。它需要私有验收计划和已校验 tokenizer，不是干净安装或日常使用步骤。
 
-日常模式尚需单独实现：保留三连接/实例/Collection 校验，新增显式、默认关闭的 daily 模式与新运行账本，
-在 HTTP 发送前检查每模型/每日请求与 Token 上限、固定模型/域名、零自动重试和失败熔断；
-资源范围改用正常认证及知识库权限，替换验收白名单。只开放必要的模型出口，搜索/MCP 另行授权。
-本次发布准备没有实现或启用 daily 模式，也没有放开旧账本或网络。
+现在支持独立的 **daily** 日常模式，保留三连接/实例/Collection 校验，使用新的持久化请求账本，
+不固定问题、用户和 PDF。当前机器已准备好，可以：
+
+```bash
+python3 deployment/release/manage.py up-daily
+```
+
+首次需 prepare、从公开固定 revision 校验 tokenizer、显式 prepare-daily 和 build-daily；不需要历史测试容器。
+完整命令、配额、重建、停止、暂停恢复见
+[日常运行说明](deployment/release/DAILY.md)。默认基础部署仍关闭模型；daily 不重置或重新启用 R2 封存账本。
+仅允许固定 DeepSeek/SiliconFlow 模型接口，真实外部搜索/MCP 不随 daily 自动开放。
 
 ## 数据与模型隔离
 
@@ -110,12 +117,13 @@ R2 的 `bounded` 入口只用于已授权验收，限定用户、PDF、问题、
 [测试指南](tests/README.md) 提供禁网离线回归和本地 Mock UI 测试。
 [验证记录摘要](docs/VALIDATION.md) 区分模拟、真实数据库与历史真实供应商验收。
 R2 真实验收完成 DeepSeek 3 次、Embedding 2 次、Reranker 1 次 HTTP 200，涵盖 PDF、RAG、Citation、
-多轮、重启恢复与真实删除；本轮 R3 只执行离线回归，没有新增模型请求。
+多轮、重启恢复与真实删除。R3 的禁网回归之后，新增 daily 已完成真实浏览器上传、RAG、追问与重启恢复，
+详见 [日常运行结果](PROJECT_DAILY_RUNTIME_RESULT.md)；相关离线测试 191 项及 3 项错误展示 AppTest 通过。
 实际 Token 和费用依供应商账单，历史成功不承诺之后账户、服务或网络状态。
 
 ## 已知限制
 
-- 默认安全部署尚不能直接用于持续真实聊天/上传，daily 受控模式是后续工作。
+- 默认 off 不开放模型；日常真实聊天和上传需要显式 up-daily，并受实例共享请求与 Token 配额限制。
 - 原生 Linux 的私有文件权限与 Compose Secret 非 root 读取策略尚未独立验收。
 - Streamlit 刷新可能丢失仅保存在浏览器会话中的结构化工具面板，历史文本可从 Checkpointer 恢复。
 - Citation 的页码、Chunk、分数只显示后端实际返回字段；不会伪造缺失数据或降低 Evidence Gate 阈值。

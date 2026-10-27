@@ -93,6 +93,12 @@ def ingest(turn, event):
             tool['tool_call_id'] = event['tool_call_id']
         turn['tools'].append(tool)
         return True
+    elif kind == 'error':
+        from runtime_errors import MESSAGES
+        if isinstance(event.get('code'), str) and event['code'] in MESSAGES:
+            turn['runtime_error'] = event['code']
+            return True
+        return False
     elif kind == 'tool_result':
         name = event.get('name')
         if not isinstance(name, str):
@@ -119,7 +125,7 @@ def ingest(turn, event):
 
 
 def finish(turn, error=None):
-    turn['delivery'] = error or ('received' if turn['answer'].strip() else 'no_answer')
+    turn['delivery'] = error or ('http_error' if turn.get('runtime_error') else ('received' if turn['answer'].strip() else 'no_answer'))
     for tool in turn['tools']:
         if tool['status'] == 'running':
             tool['status'] = 'unconfirmed'

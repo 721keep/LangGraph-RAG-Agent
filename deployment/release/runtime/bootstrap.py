@@ -11,7 +11,7 @@ from safety import (COLLECTION, PROFILE, IsolationError, block_model_route,
 
 PHASE = os.environ.get('RELEASE_PHASE', 'R1')
 MODE = os.environ.get('RELEASE_MODEL_MODE', 'off')
-if PHASE not in ('R1', 'R2') or MODE not in ('off', 'bounded') or (MODE == 'bounded' and PHASE != 'R2') or Path('/app/.env').exists():
+if (PHASE, MODE) not in {('R1','off'), ('R2','off'), ('R2','bounded'), ('DAILY','daily')} or Path('/app/.env').exists():
     raise IsolationError('R1_requires_private_configuration_without_dotenv')
 runtime = json.loads(Path('/run/secrets/runtime').read_text())
 identity = json.loads(Path('/run/secrets/database_identity').read_text())
@@ -25,6 +25,8 @@ import requests
 if MODE == 'bounded':
     # Capture the actual send transport before the ordinary transports are denied.
     import r2_models
+elif MODE == 'daily':
+    import daily_runtime
 httpx.HTTPTransport.handle_request = deny_http
 httpx.AsyncHTTPTransport.handle_async_request = deny_async_http
 httpx2.HTTPTransport.handle_request = deny_http
@@ -39,6 +41,8 @@ logging.getLogger('httpx').setLevel(logging.WARNING)
 validate(settings, identity)
 if MODE == 'bounded':
     r2_models.configure(runtime)
+elif MODE == 'daily':
+    daily_ledger = daily_runtime.configure(runtime)
 
 from app.main import app
 from app.db.main import engine
@@ -55,6 +59,8 @@ STATE = {'ready': False, 'connections': {}, 'blocked_model_routes': 0}
 app.state.release_ready = lambda: STATE['ready']
 if MODE == 'bounded':
     import r2_live
+elif MODE == 'daily':
+    app.add_middleware(daily_runtime.Boundary, ledger=daily_ledger)
 
 
 async def precheck():
@@ -109,7 +115,7 @@ app.router.lifespan_context = release_lifespan
 
 @app.middleware('http')
 async def r1_model_lock(request, call_next):
-    enabled = MODE == 'bounded' and r2_models.ledger.read()['mode'] == 'armed' and not r2_models.ledger.read()['halted']
+    enabled = MODE == 'daily' or (MODE == 'bounded' and r2_models.ledger.read()['mode'] == 'armed' and not r2_models.ledger.read()['halted'])
     if block_model_route(request.method, request.url.path) and not enabled:
         STATE['blocked_model_routes'] += 1
         return JSONResponse({'detail': 'R1 startup validation only: live model requests are disabled until R2 authorization.'}, status_code=503)
@@ -123,7 +129,8 @@ async def ready():
     async with engine.connect() as conn:
         row = (await conn.execute(text(QUERY))).one()
         verify_actual(row, identity)
-    return {'status': 'ready', 'release': PHASE, 'model_api_enabled': MODE == 'bounded' and r2_models.ledger.read()['mode'] == 'armed',
+    return {'status': 'ready', 'release': PHASE, 'model_mode': MODE,
+            'model_api_enabled': (MODE == 'daily' and not daily_ledger.status()['paused']) or (MODE == 'bounded' and r2_models.ledger.read()['mode'] == 'armed'),
             'collection': COLLECTION, 'connections': STATE['connections'],
             'blocked_model_routes': STATE['blocked_model_routes']}
 

@@ -1,0 +1,24 @@
+# Explicit daily opt-in; compose.yaml and compose.r2.yaml remain independent.
+services:
+  backend:
+    image: langgraph-rag-release-backend:20261027-daily
+    environment:
+      RELEASE_PHASE: DAILY
+      RELEASE_MODEL_MODE: daily
+    secrets: [daily_policy]
+    volumes:
+      - daily-data:/run/daily
+      - ./.private/daily-tokenizer:/run/daily-tokenizer:ro
+    networks: [daily-egress]
+  frontend:
+    image: langgraph-rag-release-frontend:20261027-daily
+  checks:
+    image: langgraph-rag-release-checks:20261027-daily
+networks:
+  daily-egress: {name: rag_release_daily_models}
+volumes:
+  daily-data:
+    name: rag_release_daily_usage_v1
+    labels: {org.langgraph.daily: usage-v1}
+secrets:
+  daily_policy: {file: ./.private/daily_policy.json}

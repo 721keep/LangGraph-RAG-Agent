@@ -13,6 +13,7 @@ COPY deployment/release/r2-requirements.txt /build/r2-requirements.txt
 RUN python -m pip install --no-cache-dir --retries 0 -c /build/constraints.txt -r /build/r2-requirements.txt \
     && python -m pip check
 COPY deployment/release/runtime/ /release/
+RUN mkdir -p /run/daily && chown 10001:10001 /run/daily
 USER 10001:10001
 EXPOSE 8000
 ENTRYPOINT ["python", "-B", "/release/bootstrap.py"]

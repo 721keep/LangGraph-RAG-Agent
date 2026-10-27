@@ -117,7 +117,7 @@ def attest():
     print('R1 actual database and new Volume attested. Initializers may now run only against this database identity.')
 
 
-def up(recreate=False, r2=False):
+def up(recreate=False, r2=False, daily=False):
     subprocess.run(COMPOSE + ['config', '--quiet'], check=True)
     topology = json.loads(subprocess.check_output(COMPOSE + ['config', '--format', 'json'], text=True))
     pg = topology['services']['r1-postgres']
@@ -127,12 +127,15 @@ def up(recreate=False, r2=False):
             or not topology['networks']['database']['internal']
             or not topology['networks']['application']['internal']
             or topology['services']['backend'].get('ports')
-            or set(topology['services']['backend']['networks']) != ({'database', 'application', 'egress'} if r2 else {'database', 'application'})):
+            or set(topology['services']['backend']['networks']) != ({'database', 'application', 'daily-egress'} if daily else ({'database', 'application', 'egress'} if r2 else {'database', 'application'}))):
         raise RuntimeError('Pre-initialization deployment topology mismatch')
     if r2 and (topology['services']['backend']['environment'].get('RELEASE_MODEL_MODE') != 'bounded'
                or topology['services']['backend']['image'] != 'langgraph-rag-release-backend:20261027-r2'
                or topology['networks']['egress']['name'] != 'rag_release_r2_egress'):
         raise RuntimeError('R2 explicit bounded deployment mismatch')
+    if daily:
+        from daily_manage import validate_topology
+        validate_topology(topology)
     mount = next(m for m in pg['volumes'] if m['target'] == '/var/lib/postgresql/data')
     if mount['type'] != 'volume' or mount['source'] != 'r1-data':
         raise RuntimeError('Pre-initialization PostgreSQL volume target mismatch')
@@ -167,6 +170,9 @@ if __name__ == '__main__':
             up()
         elif action == 'recreate':
             up(recreate=True)
+        elif action in ('prepare-daily','build-daily','up-daily','restart-daily','daily-status','resume-daily'):
+            from daily_manage import main as daily_main
+            daily_main(action, sys.argv[2:])
         elif action in ('build-r2', 'up-r2', 'restart-r2'):
             COMPOSE += ['-f', str(HERE / 'compose.r2.yaml')]
             if action == 'build-r2':

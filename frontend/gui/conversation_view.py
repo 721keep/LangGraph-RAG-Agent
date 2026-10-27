@@ -124,6 +124,10 @@ def evidence(turn):
 
 
 def delivery(turn):
+    from runtime_errors import MESSAGES
+    if turn.get('runtime_error') in MESSAGES:
+        st.error(MESSAGES[turn['runtime_error']])
+        return
     status = turn['delivery']
     if status in ('network_error', 'http_error', 'interrupted', 'setup_error'):
         st.error({'network_error': '网络连接中断，服务器处理结果待核验。', 'http_error': 'Chat 服务拒绝或未能完成请求。',

@@ -52,6 +52,15 @@ up 不开放真实模型。R2 的 compose.r2.yaml 是显式 bounded 覆盖，仅
 build-r2/up-r2/arm-r2/seal-r2/restart-r2 是验收运维命令，当前已 sealed，不能重新 arm。
 不要运行这些命令来绕过日常模式缺口，也不要创建新账本冒充延续旧验收。
 
-日常使用需要后续独立的 daily 模式与新运行账本：每模型请求与 Token 上限、发送前持久计数、
-域名/模型白名单、零自动重试、认证/额度错误熔断、正常用户/KB 授权及明确的仅模型网络出口。
-这需要少量部署/runtime 开发及离线安全回归，本轮没有永久解锁或重置任何预算。
+## 新增 daily 日常模式
+
+已实现独立的 daily 覆盖，不修改 R1 默认 off 或 R2 bounded。当前机器已准备，可直接：
+
+```bash
+python3 deployment/release/manage.py up-daily
+python3 deployment/release/manage.py daily-status
+python3 deployment/release/manage.py stop
+```
+
+实际限额、首次初始化、重建/恢复及持久化说明见 [DAILY.md](DAILY.md)。
+日常使用不运行 up-r2/arm-r2，不重置验收账本，不重新生成原 JWT/数据库凭据。
