@@ -11,12 +11,13 @@ from langchain_postgres import PGVector
 from loguru import logger
 
 from app.config import settings
+from app.documents.errors import DocumentIndexingError, classify_vector_error
 
 embeddings = init_embeddings(
     model=settings.embeddings_model_name,
     base_url=settings.embeddings_base_url,
-    provider=settings.model_provider,
-    api_key=settings.dashscope_api_key,
+    provider=settings.embeddings_provider,
+    api_key=settings.embeddings_api_key,
     check_embedding_ctx_length=False,
     chunk_size=10,
 )
@@ -100,7 +101,14 @@ async def index_document_to_pgvector(
         f"user_id: {user_id}"
     )
 
-    splits = await _load_and_split_documents(file_path)
+    try:
+        splits = await _load_and_split_documents(file_path)
+        if not splits or not any(split.page_content.strip() for split in splits):
+            raise ValueError("No extractable text")
+    except Exception as error:
+        code = "pdf_parse_failed" if file_path.suffix.lower() == ".pdf" else "document_parse_failed"
+        logger.warning("Indexing failed: document_id={}, stage=parse, code={}", document_id, code)
+        raise DocumentIndexingError(code, "parse", 422) from error
 
     for chunk_index, split in enumerate(splits):
         split.metadata["id"] = str(uuid4())
@@ -135,10 +143,12 @@ async def index_document_to_pgvector(
         return doc_ids
 
     except Exception as e:
-        logger.error(
-            f"Error adding documents to PGVector: {e}"
+        failure = classify_vector_error(e)
+        logger.warning(
+            "Indexing failed: document_id={}, stage={}, code={}",
+            document_id, failure.stage, failure.code,
         )
-        raise
+        raise failure from e
 
 
 async def search_documents_in_pgvector(query: str = "", k: int = 1, filter: dict | None = None) -> list[Document]:

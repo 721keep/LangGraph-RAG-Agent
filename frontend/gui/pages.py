@@ -1,118 +1,42 @@
 import api_utils
 import streamlit as st
+import ui
 from chat_components import authenticated_user_chat_interface_component, unauthenticated_user_chat_interface_component
 from state_management import Page, authenticate_user
 
+
 def agent_status_component():
-    """Display the current Agent configuration."""
+    """Compatibility entry point; configuration now lives in the compact toolbar."""
+    st.caption("RAG · Web Search · MCP")
 
-    model_name = st.session_state.get(
-        "model_name",
-        "Unavailable",
-    )
-
-    chat_config = st.session_state.get(
-        "chat_config",
-        {},
-    )
-
-    model_provider = chat_config.get(
-        "model_provider",
-        "Unknown",
-    )
-
-    thread = st.session_state["thread"]
-    knowledge_bases = (
-        st.session_state["user"].knowledge_bases
-    )
-
-    knowledge_base_name = "No Knowledge Base"
-
-    if thread.knowledge_base_id is not None:
-        selected_kb = next(
-            (
-                kb
-                for kb in knowledge_bases
-                if str(kb["id"])
-                == str(thread.knowledge_base_id)
-            ),
-            None,
-        )
-
-        if selected_kb:
-            knowledge_base_name = selected_kb["name"]
-
-    top_k = st.session_state.get("top_k", 3)
-    similarity_threshold = st.session_state.get(
-        "similarity_threshold",
-        0.50,
-    )
-    rerank_top_n = st.session_state.get(
-        "rerank_top_n",
-        3,
-    )
-
-    with st.container(border=True):
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.markdown("**🤖 Model**")
-            st.write(model_name)
-            st.caption(f"Provider: {model_provider}")
-
-        with col2:
-            st.markdown("**📚 Knowledge Base**")
-            st.write(knowledge_base_name)
-
-        st.markdown("**🔎 Retrieval**")
-        st.caption(
-            f"Top-K {top_k} · "
-            f"Threshold {similarity_threshold:.2f} · "
-            f"Rerank {rerank_top_n}"
-        )
-
-        st.markdown("**🧰 Agent Tools**")
-        st.caption("RAG · Web Search · MCP")
 
 def home_page():
-    if not st.session_state["user"].is_authenticated:
-        st.title("🤖 LangGraph Agent")
-        st.markdown(
-            """
-            Welcome to LangGraph Agent, an Agentic RAG assistant with private knowledge, web search, tool use, and conversational memory.
-
-            ### ✨ Key Features for Logged-in Users:
-            - Ask questions and receive smart, context-aware answers.
-            - Upload your own documents for tailored assistance.
-            - Use tavily search for general knowledge questions.
-            - Enjoy **chat memory** to remember and recall previous conversations.
-            """
-        )
-        st.subheader(
-            "💬 Try the assistant",
-            divider="gray",
-        )
-        unauthenticated_user_chat_interface_component()
+    thread = st.session_state["thread"]
+    from conversation_session import pending
+    if not thread.messages and not st.session_state.get("prompt") and not pending(thread):
+        ui.empty_chat()
     else:
-        st.title("🤖 LangGraph Agent")
-
-        st.caption(
-            "Agentic RAG assistant with private knowledge, "
-            "web search, and MCP tools."
-        )
-
-        agent_status_component()
-
-        st.subheader(
-            "💬 Ask your agent",
-            divider="gray",
-        )
-
+        ui.section_header(thread.title or "Conversation", "A focused place to think with your knowledge.", "CONVERSATION")
+    if st.session_state["user"].is_authenticated:
         authenticated_user_chat_interface_component()
+    else:
+        unauthenticated_user_chat_interface_component()
+
+
+def knowledge_page():
+    from resource_components import knowledge_base_component
+    ui.section_header("Knowledge bases", "Give your conversations a trusted source of context.")
+    knowledge_base_component()
+
+
+def documents_page():
+    from resource_components import document_list_component
+    ui.section_header("Documents", "Add sources, check indexing progress, and keep your knowledge up to date.")
+    document_list_component()
 
 
 def login_page():
-    st.subheader("🔐 Login", divider="gray")
+    st.subheader("Login", divider="gray")
     with st.form("login_form"):
         email = st.text_input("Email *")
         password = st.text_input("Password *", type="password")
@@ -133,7 +57,7 @@ def login_page():
 
 
 def register_page():
-    st.subheader("✍ Register", divider="gray")
+    st.subheader("Create your account", divider="gray")
     with st.form("register_form"):
         col1, col2 = st.columns(2)
         email = col1.text_input("Email *")
@@ -165,6 +89,6 @@ def register_page():
 
 
 def back_to_home_component():
-    if st.button("⬅️ Back to Home", type="tertiary"):
+    if ui.button("Back to workspace", key="ui_back_home", name="arrow-left", variant="ghost"):
         st.session_state["page"] = Page.HOME
         st.rerun()

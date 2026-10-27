@@ -52,5 +52,5 @@ async def chat_stream(
 
 
 @chat_router.get("/{thread_id}", response_model=list[Message])
-async def get_chat_history(thread_id: UUID, current_user: CurrentUserDep):
-    return await chat_service.get_chat_history(thread_id, current_user.id)
+async def get_chat_history(thread_id: UUID, current_user: CurrentUserDep, session: SessionDep):
+    return await chat_service.get_chat_history(thread_id, current_user.id, session)

@@ -1,0 +1,37 @@
+name: rag-regression-ui
+services:
+  m3-api:
+    image: langgraph-rag-release-frontend:20261027-r2
+    entrypoint: [python, -B, /m3/mock_api.py]
+    volumes: ["../frontend_m3:/m3:ro"]
+    read_only: true
+    tmpfs: [/tmp]
+    networks: [mock]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8000/m1/metrics').status == 200"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+  checks:
+    image: langgraph-rag-release-frontend:20261027-r2
+    working_dir: /workspace
+    entrypoint: [python, -B, /offline/ui_runner.py]
+    environment:
+      BACKEND_BASE_URL: http://m3-api:8000/api/v1
+      MODEL_NAMES: '["deepseek-flash","preview-model"]'
+      PYTHONDONTWRITEBYTECODE: '1'
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: 'false'
+    volumes:
+      - ../../frontend/gui:/workspace/frontend/gui:ro
+      - ../../frontend/.streamlit:/workspace/.streamlit:ro
+      - ../frontend_m1:/m1:ro
+      - ../frontend_m2:/m2:ro
+      - ../frontend_m3:/m3:ro
+      - .:/offline:ro
+    read_only: true
+    tmpfs: [/tmp, /workspace/logs, /m3-artifacts]
+    networks: [mock]
+    depends_on:
+      m3-api: {condition: service_healthy}
+networks:
+  mock: {internal: true}

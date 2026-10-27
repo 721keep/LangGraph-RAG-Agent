@@ -5,13 +5,6 @@ from loguru import logger
 from openai import AsyncOpenAI
 
 
-RERANK_MODEL = "qwen3-rerank"
-
-RERANK_BASE_URL = (
-    "https://dashscope.aliyuncs.com/compatible-api/v1"
-)
-
-
 class RerankResult(TypedDict):
     """A single reranking result."""
 
@@ -20,11 +13,8 @@ class RerankResult(TypedDict):
 
 
 rerank_client = AsyncOpenAI(
-    api_key=(
-        settings.dashscope_api_key
-        .get_secret_value()
-    ),
-    base_url=RERANK_BASE_URL,
+    api_key=settings.rerank_api_key.get_secret_value(),
+    base_url=settings.rerank_base_url,
     timeout=30.0,
 )
 
@@ -66,14 +56,14 @@ async def rerank_documents(
 
     logger.info(
         f"Reranking {len(documents)} candidate documents "
-        f"with model={RERANK_MODEL}, "
+        f"with model={settings.rerank_model_name}, "
         f"top_n={effective_top_n}"
     )
 
     response = await rerank_client.post(
-        "/reranks",
+        settings.rerank_path,
         body={
-            "model": RERANK_MODEL,
+            "model": settings.rerank_model_name,
             "query": query,
             "documents": documents,
             "top_n": effective_top_n,

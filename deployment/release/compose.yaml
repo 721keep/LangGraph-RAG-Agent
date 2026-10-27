@@ -1,0 +1,106 @@
+name: rag-release-r1
+services:
+  r1-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: rag_release_r1_postgres
+    environment:
+      POSTGRES_DB: langgraph_rag_bge_prod
+      POSTGRES_USER: r1_rag_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes: [r1-data:/var/lib/postgresql/data]
+    networks: [database]
+    healthcheck:
+      test: [CMD, pg_isready, -U, r1_rag_user, -d, langgraph_rag_bge_prod]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  backend:
+    image: langgraph-rag-release-backend:20261027-r2
+    container_name: rag_release_r1_backend
+    build:
+      context: ../..
+      dockerfile: deployment/release/backend.Dockerfile
+      target: runtime
+    environment:
+      PYTHONDONTWRITEBYTECODE: '1'
+      RELEASE_PHASE: R1
+      RELEASE_MODEL_MODE: 'off'
+    secrets: [runtime, database_identity]
+    networks: [database, application]
+    depends_on: {r1-postgres: {condition: service_healthy}}
+    read_only: true
+    tmpfs:
+      - /tmp:uid=10001,gid=10001
+      - /app/tmp:uid=10001,gid=10001
+      - /app/logs:uid=10001,gid=10001
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -B, -c, "import json,urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8000/health/ready'))['status']=='ready'"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 6
+    restart: unless-stopped
+  frontend:
+    image: langgraph-rag-release-frontend:20261027-r2
+    container_name: rag_release_r1_frontend
+    build:
+      context: ../..
+      dockerfile: deployment/release/frontend.Dockerfile
+    environment:
+      BACKEND_BASE_URL: http://backend:8000/api/v1
+      MODEL_NAMES: '["deepseek-flash"]'
+      DOCUMENT_UPLOAD_CONNECT_TIMEOUT: '10'
+      DOCUMENT_UPLOAD_READ_TIMEOUT: '300'
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: 'false'
+      PYTHONDONTWRITEBYTECODE: '1'
+    ports: ['127.0.0.1:18510:8501']
+    networks: [application, browser]
+    depends_on: {backend: {condition: service_healthy}}
+    read_only: true
+    tmpfs:
+      - /tmp:uid=10001,gid=10001
+      - /app/logs:uid=10001,gid=10001
+      - /home/workspace/.streamlit:uid=10001,gid=10001
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -B, -c, "import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health').status==200"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 6
+    restart: unless-stopped
+  checks:
+    profiles: [checks]
+    image: langgraph-rag-release-checks:20261027-r2
+    build:
+      context: ../..
+      dockerfile: deployment/release/backend.Dockerfile
+      target: checks
+    network_mode: none
+    working_dir: /workspace
+    entrypoint: [python, -B, -m, pytest]
+    command: [/workspace/tests/test_upload_reliability.py, /workspace/tests/test_model_configuration.py, /workspace/tests/release/test_release_safety.py, /workspace/tests/release/test_manage.py, -q, -p, 'no:cacheprovider']
+    volumes:
+      - ../../backend:/workspace/backend:ro
+      - ../../frontend/gui:/workspace/frontend/gui:ro
+      - ../../tests:/workspace/tests:ro
+      - ./manage.py:/workspace/deployment/release/manage.py:ro
+    read_only: true
+    tmpfs: [/tmp, /app/logs]
+networks:
+  database: {name: rag_release_r1_database, internal: true}
+  application: {name: rag_release_r1_application, internal: true}
+  browser: {name: rag_release_r1_browser}
+volumes:
+  r1-data:
+    name: rag_release_r1_pgdata_v1
+    labels: {org.langgraph.release: r1-bge-v1}
+secrets:
+  db_password: {file: ./.private/db_password}
+  runtime: {file: ./.private/runtime.json}
+  database_identity: {file: ./.private/database_identity.json}

@@ -70,6 +70,7 @@ class DocumentPublic(BaseModel):
 
 
 class DocumentUploadResponse(BaseModel):
+    status: DocumentStatus = "ready"
     document_id: UUID
     message: str
 

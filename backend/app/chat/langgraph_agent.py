@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from app.config import settings
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -11,6 +13,25 @@ from .prompts import dynamic_system_prompt
 
 def create_model(model_name: str, streaming: bool = False) -> BaseChatModel:
     """Create a retrieval chain based on the provided model name."""
+
+    endpoint = urlsplit(settings.model_base_url or "")
+    if (
+        settings.model_provider == "openai"
+        and endpoint.scheme == "https"
+        and endpoint.hostname == "api.deepseek.com"
+        and endpoint.port in (None, 443)
+        and not endpoint.username and not endpoint.password
+        and not endpoint.query and not endpoint.fragment
+        and endpoint.path.rstrip("/") in ("", "/v1", "/beta")
+    ):
+        from .deepseek import DeepSeekChatOpenAI
+
+        return DeepSeekChatOpenAI(
+            model=model_name,
+            api_key=settings.chat_api_key,
+            base_url=settings.model_base_url,
+            streaming=streaming,
+        )
 
     model = init_chat_model(
         model=model_name,

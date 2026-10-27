@@ -1,0 +1,21 @@
+# Explicit opt-in. Base compose.yaml remains model-off and keeps its R1 image.
+services:
+  backend:
+    image: langgraph-rag-release-backend:20261027-r2
+    environment:
+      RELEASE_PHASE: R2
+      RELEASE_MODEL_MODE: bounded
+    secrets: [r2_control, r2_plan]
+    volumes:
+      - ./.private/r2-data:/run/r2
+      - ./.private/r2-tokenizer:/run/tokenizer:ro
+    networks: [egress]
+  checks:
+    image: langgraph-rag-release-checks:20261027-r2
+  frontend:
+    image: langgraph-rag-release-frontend:20261027-r2
+networks:
+  egress: {name: rag_release_r2_egress}
+secrets:
+  r2_control: {file: ./.private/r2_control}
+  r2_plan: {file: ./.private/r2_plan.json}

@@ -1,0 +1,16 @@
+**
+!backend/
+!backend/requirements.txt
+!backend/app/
+!backend/app/**
+!deployment/
+!deployment/release/
+!deployment/release/backend.constraints.txt
+!deployment/release/r2-requirements.txt
+!deployment/release/runtime/
+!deployment/release/runtime/**
+**/__pycache__/
+**/*.pyc
+**/.env
+**/.env.*
+**/.private/

@@ -76,11 +76,13 @@ class ChatStreamResponse(StreamingResponse):
         return ""
 
     async def _handle_updates_stream(self, chunk: dict[str, Any]) -> AsyncGenerator[str, Any]:
-        for node_output in chunk.values():
-            if "messages" not in node_output:
-                continue
-
-            message = node_output["messages"][-1]
+        messages = [
+            message
+            for node_output in chunk.values()
+            if isinstance(node_output, dict)
+            for message in node_output.get("messages", [])
+        ]
+        for message in messages:
 
             if isinstance(message, AIMessage):
                 if message.tool_calls:

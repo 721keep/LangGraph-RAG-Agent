@@ -1,5 +1,6 @@
 import api_utils
 import streamlit as st
+import ui
 from uuid import UUID
 
 from state_management import (
@@ -14,44 +15,53 @@ from state_management import (
 
 
 def display_sidebar():
-    st.sidebar.title("🤖 LangGraph Agent")
+    with st.sidebar:
+        ui.brand()
+        ui.button("New Chat", key="ui_new_chat", name="plus", variant="primary",
+                  use_container_width=True, on_click=_new_chat)
+        st.caption("WORKSPACE")
+        authenticated = st.session_state["user"].is_authenticated
+        for view, label, name in [("chat", "Conversations", "message-square"),
+                                  ("knowledge", "Knowledge bases", "book-open"),
+                                  ("documents", "Documents", "file-text")]:
+            ui.button(label, key="ui_nav_" + view, name=name,
+                      variant="active" if st.session_state.get("ui_view") == view else "ghost",
+                      disabled=not authenticated and view != "chat", use_container_width=True,
+                      on_click=ui.set_view, args=(view,),
+                      help=label if authenticated or view == "chat" else "Sign in to manage your knowledge")
+        st.divider()
+        if authenticated:
+            chat_history_component()
+            st.divider()
+            greeting_component()
+            logout_component()
+        else:
+            authentication_component()
 
-    if st.session_state["user"].is_authenticated:
-        greeting_component()
-        model_selection_component()
-        retrieval_settings_component()
 
-        knowledge_base_component()
-        document_list_component()
-
-        chat_history_component()
-        logout_component()
-    else:
-        authentication_component()
+def _new_chat():
+    new_chat()
+    st.session_state.pop("knowledge_base_selector_new", None)
+    ui.set_view("chat")
 
 
 def authentication_component():
-    st.sidebar.subheader("🔒 Authentication", divider="gray")
-    col1, col2 = st.sidebar.columns(2)
-    if col1.button("Login"):
-        st.session_state["page"] = Page.LOGIN
-    if col2.button("Register"):
-        st.session_state["page"] = Page.REGISTER
-    st.sidebar.markdown("**Please login or register for full acces.**")
+    st.caption("Make room for your knowledge.")
+    col1, col2 = st.columns(2)
+    with col1:
+        if ui.button("Login", key="ui_login", name="log-in", use_container_width=True):
+            st.session_state["page"] = Page.LOGIN
+    with col2:
+        if ui.button("Register", key="ui_register", name="user-round", use_container_width=True):
+            st.session_state["page"] = Page.REGISTER
 
 
 def greeting_component():
-    st.sidebar.subheader(f"👋 Welcome {st.session_state['user'].username}", divider="gray")
-    if st.sidebar.button("New Chat"):
-        new_chat()
+    ui.icon_label(st.session_state["user"].username or "Your account", "user-round")
+    st.caption("Personal workspace")
 
 
 def model_selection_component():
-    st.sidebar.subheader(
-        "🤖 Model",
-        divider="gray",
-    )
-
     chat_config = st.session_state.get(
         "chat_config",
         {},
@@ -73,7 +83,7 @@ def model_selection_component():
     if not model_names:
         st.session_state["model_name"] = None
 
-        st.sidebar.error(
+        st.error(
             "Unable to load available models."
         )
         return
@@ -95,7 +105,7 @@ def model_selection_component():
         current_model
     )
 
-    selected_model = st.sidebar.selectbox(
+    selected_model = st.selectbox(
         "Chat Model",
         options=model_names,
         index=selected_index,
@@ -105,10 +115,7 @@ def model_selection_component():
 
     st.session_state["model_name"] = selected_model
 
-    if model_provider:
-        st.sidebar.caption(
-            f"Provider: {model_provider}"
-        )
+
 
 def retrieval_settings_component():
     top_k = st.session_state.get(
@@ -126,17 +133,9 @@ def retrieval_settings_component():
         3,
     )
 
-    st.sidebar.caption(
-        "⚙️ "
-        f"Top-K {top_k} · "
-        f"Threshold {similarity_threshold:.2f} · "
-        f"Rerank {rerank_top_n}"
-    )
-
-    with st.sidebar.expander(
-        "🔎 Retrieval Settings",
-        expanded=False,
-    ):
+    with ui.popover("Retrieval settings", key="toolbar_retrieval", name="sliders-horizontal", icon_only=True):
+        ui.icon_label("Retrieval", "sliders-horizontal")
+        st.caption("Agent tools: RAG / Web Search / MCP. Availability follows backend configuration.")
         st.select_slider(
             "Top-K",
             options=[1, 3, 5, 8, 10],
@@ -172,66 +171,10 @@ def retrieval_settings_component():
             ),
         )
 
-def knowledge_base_component():
-    st.sidebar.subheader(
-        "📚 Knowledge Base",
-        divider="gray",
-    )
 
-    knowledge_bases = (
-        st.session_state["user"].knowledge_bases
-    )
-
+def knowledge_base_selector_component():
+    knowledge_bases = st.session_state["user"].knowledge_bases
     thread = st.session_state["thread"]
-
-    # ---------------------------------------------------------
-    # Create Knowledge Base
-    # ---------------------------------------------------------
-    with st.sidebar.expander("➕ Create Knowledge Base"):
-        kb_name = st.text_input(
-            "Name",
-            key="new_knowledge_base_name",
-            placeholder="e.g. Robot Manual",
-        )
-
-        kb_description = st.text_area(
-            "Description",
-            key="new_knowledge_base_description",
-            placeholder="Optional description",
-        )
-
-        if st.button(
-            "Create",
-            key="create_knowledge_base_button",
-        ):
-            if not kb_name.strip():
-                st.error(
-                    "Knowledge base name cannot be empty."
-                )
-            else:
-                create_response = (
-                    api_utils.create_knowledge_base(
-                        name=kb_name.strip(),
-                        description=(
-                            kb_description.strip()
-                            or None
-                        ),
-                    )
-                )
-
-                if create_response.get("id"):
-                    st.success(
-                        "Knowledge base created successfully."
-                    )
-
-                    update_user_knowledge_bases()
-                    st.rerun()
-
-                else:
-                    st.error(
-                        "Failed to create knowledge base."
-                    )
-
     # ---------------------------------------------------------
     # Knowledge Base selector
     # ---------------------------------------------------------
@@ -261,7 +204,9 @@ def knowledge_base_component():
         f"{thread.id or 'new'}"
     )
 
-    selected_kb_id = st.sidebar.selectbox(
+    if st.session_state.pop("ui_reset_kb", False) or st.session_state.get(selector_key) not in options:
+        st.session_state.pop(selector_key, None)
+    selected_kb_id = st.selectbox(
         "Select Knowledge Base",
         options=options,
         index=selected_index,
@@ -274,6 +219,7 @@ def knowledge_base_component():
             )
         ),
         key=selector_key,
+        label_visibility="collapsed",
     )
 
     # ---------------------------------------------------------
@@ -293,19 +239,20 @@ def knowledge_base_component():
                 api_utils.set_thread_knowledge_base(
                     thread_id=thread.id,
                     knowledge_base_id=selected_uuid,
+                    detailed=True,
                 )
             )
 
-            if not bind_response.get("id"):
-                st.sidebar.error(
-                    "Failed to update knowledge base."
-                )
+            if not bind_response["ok"]:
+                st.error(bind_response["message"])
+                st.session_state["ui_reset_kb"] = True
                 return
 
         # New chat:
         # keep the selection locally until the thread
         # is created by the first message.
         thread.knowledge_base_id = selected_uuid
+        thread.documents = []
 
         if selected_uuid is not None:
             update_knowledge_base_document_list(
@@ -316,6 +263,68 @@ def knowledge_base_component():
 
         st.rerun()
 
+
+
+def knowledge_base_component():
+    knowledge_bases = (
+        st.session_state["user"].knowledge_bases
+    )
+
+    thread = st.session_state["thread"]
+
+    # ---------------------------------------------------------
+    # Create Knowledge Base
+    # ---------------------------------------------------------
+    ui.restore_draft("new_knowledge_base_name")
+    ui.restore_draft("new_knowledge_base_description")
+    with st.expander("Create Knowledge Base", expanded=not knowledge_bases):
+        kb_name = st.text_input(
+            "Name",
+            key="new_knowledge_base_name",
+            on_change=ui.remember_draft, args=("new_knowledge_base_name",),
+            placeholder="e.g. Robot Manual",
+        )
+
+        kb_description = st.text_area(
+            "Description",
+            key="new_knowledge_base_description",
+            on_change=ui.remember_draft, args=("new_knowledge_base_description",),
+            placeholder="Optional description",
+        )
+
+        if ui.button(
+            "Create", name="plus", variant="primary",
+            key="create_knowledge_base_button",
+        ):
+            if not kb_name.strip():
+                st.error(
+                    "Knowledge base name cannot be empty."
+                )
+            else:
+                create_response = (
+                    api_utils.create_knowledge_base(
+                        name=kb_name.strip(),
+                        description=(
+                            kb_description.strip()
+                            or None
+                        ),
+                    )
+                )
+
+                if create_response.get("id"):
+                    ui.flash(
+                        "Knowledge base created successfully."
+                    )
+
+                    update_user_knowledge_bases()
+                    st.rerun()
+
+                else:
+                    st.error(
+                        "Failed to create knowledge base."
+                    )
+
+    selected_kb_id = str(thread.knowledge_base_id) if thread.knowledge_base_id else None
     # ---------------------------------------------------------
     # Selected KB information
     # ---------------------------------------------------------
@@ -335,13 +344,13 @@ def knowledge_base_component():
             )
 
             if description:
-                st.sidebar.caption(description)
+                st.caption(description)
 
         # -----------------------------------------------------
         # Delete KB
         # -----------------------------------------------------
-        with st.sidebar.expander(
-            "⚙️ Manage Knowledge Base"
+        with st.expander(
+            "Manage Knowledge Base"
         ):
             confirmed = st.checkbox(
                 "Confirm knowledge base deletion",
@@ -351,8 +360,9 @@ def knowledge_base_component():
                 ),
             )
 
-            if st.button(
-                "🗑️ Delete Knowledge Base",
+            ui.danger_note("Deleting this knowledge base permanently removes its documents and indexed chunks. This cannot be undone.")
+            if ui.button(
+                "Delete Knowledge Base", name="trash-2", variant="danger",
                 key=(
                     "delete_knowledge_base_"
                     f"{selected_kb_id}"
@@ -371,119 +381,60 @@ def knowledge_base_component():
 
                     update_user_knowledge_bases()
 
-                    st.session_state[
-                        selector_key
-                    ] = None
+                    st.session_state["ui_reset_kb"] = True
 
-                    st.sidebar.success(
+                    ui.flash(
                         "Knowledge base deleted."
                     )
 
                     st.rerun()
 
                 else:
-                    st.sidebar.error(
+                    st.error(
                         "Failed to delete knowledge base."
                     )
 
 
 def chat_history_component():
-    st.sidebar.subheader(
-        "💬 Conversations",
-        divider="gray",
-    )
-
+    st.caption("RECENT CONVERSATIONS")
+    ui.restore_draft("ui_history_search")
+    query = st.text_input("Search conversations", placeholder="Search conversations…",
+                          key="ui_history_search", label_visibility="collapsed",
+                          on_change=ui.remember_draft, args=("ui_history_search",))
     threads = st.session_state["user"].threads
-    current_thread_id = st.session_state["thread"].id
-
-    if not threads:
-        st.sidebar.caption(
-            "No conversations yet."
-        )
-        return
-
-    # ---------------------------------------------------------
-    # Conversation selector
-    # ---------------------------------------------------------
-    for thread in threads:
-        thread_id = thread["id"]
+    current = st.session_state["thread"].id
+    shown = [t for t in threads if query.casefold() in (t["title"] or "Untitled conversation").casefold()]
+    if not shown:
+        st.caption("No matching conversations." if query else "Your conversations will appear here.")
+    for thread in shown:
+        tid = thread["id"]
         title = thread["title"] or "Untitled conversation"
-
-        is_current = (
-            current_thread_id is not None
-            and str(current_thread_id) == str(thread_id)
-        )
-
-        button_label = (
-            f"▸ {title}"
-            if is_current
-            else title
-        )
-
-        if st.sidebar.button(
-            button_label,
-            key=f"select_thread_{thread_id}",
-            use_container_width=True,
-            type="secondary",
-        ):
-            if not is_current:
-                change_thread(thread_id)
+        selected = current is not None and str(current) == str(tid)
+        item, actions = st.columns([.84, .16], gap="small")
+        with item:
+            if ui.button(title, key=f"select_thread_{tid}", name="message-square",
+                         variant="active" if selected else "ghost", use_container_width=True):
+                if not selected:
+                    change_thread(tid)
+                ui.set_view("chat")
                 st.rerun()
-
-    # ---------------------------------------------------------
-    # Conversation management
-    # ---------------------------------------------------------
-    with st.sidebar.expander(
-        "⚙️ Manage conversations",
-        expanded=False,
-    ):
-        st.caption(
-            "Delete conversations you no longer need."
-        )
-
-        for thread in threads:
-            thread_id = thread["id"]
-            title = thread["title"] or "Untitled conversation"
-
-            col1, col2 = st.columns(
-                [0.80, 0.20]
-            )
-
-            with col1:
+        with actions:
+            with ui.popover("Conversation actions: " + title, key=f"thread_actions_{tid}", icon_only=True):
                 st.caption(title)
-
-            with col2:
-                if st.button(
-                    "🗑️",
-                    key=f"delete_thread_{thread_id}",
-                    help="Delete conversation",
-                ):
-                    with st.spinner(""):
-                        delete_response = (
-                            api_utils.delete_thread(
-                                thread_id
-                            )
-                        )
-
-                    if (
-                        delete_response.get("status")
-                        == "ok"
-                    ):
+                ui.danger_note("Delete this conversation and its saved history? This cannot be undone.")
+                confirm = st.checkbox("Confirm conversation deletion", key=f"confirm_delete_thread_{tid}")
+                if ui.button("Delete conversation", key=f"delete_thread_{tid}", name="trash-2",
+                             variant="danger", disabled=not confirm):
+                    with st.spinner("Deleting conversation…"):
+                        response = api_utils.delete_thread(tid)
+                    if response.get("status") == "ok":
                         update_user_threads()
-
-                        if (
-                            current_thread_id is not None
-                            and str(current_thread_id)
-                            == str(thread_id)
-                        ):
-                            new_chat()
-
+                        if selected:
+                            _new_chat()
+                        ui.flash("Conversation deleted.")
                         st.rerun()
-
                     else:
-                        st.error(
-                            "Failed to delete conversation."
-                        )
+                        st.error("Failed to delete conversation.")
 
 
 def document_list_component():
@@ -491,8 +442,8 @@ def document_list_component():
     knowledge_base_id = thread.knowledge_base_id
 
     if knowledge_base_id is None:
-        st.sidebar.caption(
-            "📂 Documents · Select a knowledge base first"
+        st.caption(
+            "Documents · Select a knowledge base first"
         )
         return
 
@@ -500,10 +451,7 @@ def document_list_component():
 
     document_count = len(documents)
 
-    with st.sidebar.expander(
-        f"📂 Documents · {document_count}",
-        expanded=False,
-    ):
+    with st.container(key="document_manager"):
         # -----------------------------------------------------
         # Upload Document
         # -----------------------------------------------------
@@ -514,10 +462,11 @@ def document_list_component():
         )
 
         if uploaded_file is not None:
-            if st.button(
-                "Upload",
+            if ui.button(
+                "Upload", name="upload", variant="primary",
                 key=f"upload_button_{knowledge_base_id}",
                 use_container_width=True,
+                disabled=any(doc.get("status") == "processing" for doc in documents),
             ):
                 with st.spinner(
                     "Indexing document..."
@@ -529,27 +478,23 @@ def document_list_component():
                         )
                     )
 
-                document_id = (
-                    upload_response.get("document_id")
-                    if upload_response
-                    else None
-                )
-
-                if document_id:
-                    st.success(
-                        f"{uploaded_file.name} uploaded successfully."
-                    )
-
-                    update_knowledge_base_document_list(
-                        knowledge_base_id
-                    )
-
-                    st.rerun()
-
+                if upload_response.get("status") == "ready":
+                    st.success(f"{uploaded_file.name} uploaded successfully.")
+                elif upload_response.get("status") == "unknown":
+                    st.warning(upload_response["message"])
                 else:
-                    st.error(
-                        "Failed to upload document."
-                    )
+                    st.error(upload_response["message"])
+
+                # The backend commits processing before indexing. Refresh on all
+                # outcomes, including timeouts and errors carrying document_id.
+                update_knowledge_base_document_list(knowledge_base_id)
+                documents = thread.documents
+                document_count = len(documents)
+
+        if ui.button("Refresh documents", name="refresh-cw", key=f"refresh_documents_{knowledge_base_id}"):
+            update_knowledge_base_document_list(knowledge_base_id)
+            documents = thread.documents
+            document_count = len(documents)
 
         # -----------------------------------------------------
         # Document List
@@ -579,54 +524,51 @@ def document_list_component():
                     "ready",
                 )
 
-                st.markdown(
-                    f"{number}. {doc['file_name']}"
-                )
+                ui.icon_label(doc["file_name"], "file-text")
 
-                if status != "ready":
-                    st.caption(
-                        f"Status: {status}"
-                    )
+                st.caption(f"Status: {status}")
+                if status == "processing":
+                    st.caption("文档仍在处理中，请稍后刷新列表。")
+                elif status == "failed":
+                    st.caption(api_utils.document_failure_message(doc))
 
             with col2:
-                if st.button(
-                    "🗑️",
-                    key=f"delete_document_{doc['id']}",
-                    help="Delete document",
-                ):
-                    with st.spinner(""):
-                        delete_response = (
-                            api_utils.delete_document(
-                                doc["id"]
+                with ui.popover("Document actions: " + doc["file_name"], key=f"doc_actions_{doc['id']}", icon_only=True):
+                    ui.danger_note("Delete this document and its indexed chunks? This cannot be undone.")
+                    confirmed = st.checkbox("Confirm document deletion", key=f"confirm_delete_document_{doc['id']}", disabled=status == "processing")
+                    if ui.button(
+                        "Delete document", name="trash-2", variant="danger",
+                        key=f"delete_document_{doc['id']}",
+                        help="Processing documents cannot be deleted here." if status == "processing" else "Delete document",
+                        disabled=status == "processing" or not confirmed,
+                    ):
+                        with st.spinner(""):
+                            delete_response = (
+                                api_utils.delete_document(
+                                    doc["id"]
+                                )
                             )
-                        )
 
-                    if delete_response:
-                        st.success(
-                            "Document deleted successfully."
-                        )
+                        if delete_response:
+                            ui.flash(
+                                "Document deleted successfully."
+                            )
 
-                        update_knowledge_base_document_list(
-                            knowledge_base_id
-                        )
+                            update_knowledge_base_document_list(
+                                knowledge_base_id
+                            )
 
-                        st.rerun()
+                            st.rerun()
 
-                    else:
-                        st.error(
-                            "Failed to delete the document."
-                        )
+                        else:
+                            st.error(
+                                "Failed to delete the document."
+                            )
+
 
 
 def logout_component():
-    st.sidebar.subheader(
-        "Account",
-        divider="gray",
-    )
-
-    if st.sidebar.button(
-        "↪ Sign out",
-        use_container_width=True,
-    ):
+    if ui.button("Sign out", key="ui_sign_out", name="log-out", variant="ghost", use_container_width=True):
         logout_user()
+        ui.set_view("chat")
         st.rerun()

@@ -1,0 +1,12 @@
+.env
+.env.*
+**/.env
+**/.env.*
+**/.private
+**/.private/**
+**/.streamlit/secrets.toml
+**/__pycache__
+**/*.pyc
+**/artifacts
+**/logs
+.git

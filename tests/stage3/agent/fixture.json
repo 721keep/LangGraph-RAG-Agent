@@ -1,0 +1,78 @@
+{
+  "_note": "Entirely fictional offline fixture. Not a live retrieval snapshot or provider ledger.",
+  "scope": {
+    "user_id": "10000000-0000-0000-0000-000000000001",
+    "knowledge_base_id": "20000000-0000-0000-0000-000000000001"
+  },
+  "pgvector_search": {
+    "results": [
+      {
+        "content": "Mock fixture: 向量模型 BGE-M3，维度 1024。",
+        "metadata": {
+          "user_id": "10000000-0000-0000-0000-000000000001",
+          "knowledge_base_id": "20000000-0000-0000-0000-000000000001",
+          "id": "40000000-0000-0000-0000-000000000001",
+          "document_id": "50000000-0000-0000-0000-000000000001",
+          "file_name": "stage3_rag_test.pdf",
+          "page": 0,
+          "chunk_index": 0
+        },
+        "score": 0.88
+      },
+      {
+        "content": "Mock fixture: PostgreSQL 与 pgvector 存储知识库向量。",
+        "metadata": {
+          "user_id": "10000000-0000-0000-0000-000000000001",
+          "knowledge_base_id": "20000000-0000-0000-0000-000000000001",
+          "id": "40000000-0000-0000-0000-000000000002",
+          "document_id": "50000000-0000-0000-0000-000000000001",
+          "file_name": "stage3_rag_test.pdf",
+          "page": 0,
+          "chunk_index": 1
+        },
+        "score": 0.82
+      }
+    ]
+  },
+  "positive_rag": {
+    "sources": [
+      {
+        "source_id": 1,
+        "source_label": "[Source 1]",
+        "file_name": "stage3_rag_test.pdf",
+        "page": 1,
+        "chunk_index": 0,
+        "relevance_score": 0.88,
+        "rerank_score": 0.96,
+        "content": "Mock fixture: 向量模型 BGE-M3，维度 1024。"
+      },
+      {
+        "source_id": 2,
+        "source_label": "[Source 2]",
+        "file_name": "stage3_rag_test.pdf",
+        "page": 1,
+        "chunk_index": 1,
+        "relevance_score": 0.82,
+        "rerank_score": 0.91,
+        "content": "Mock fixture: PostgreSQL 与 pgvector 存储知识库向量。"
+      }
+    ]
+  },
+  "budget": {
+    "events": [
+      {
+        "kind": "reranker",
+        "results": [
+          {
+            "index": 0,
+            "relevance_score": 0.96
+          },
+          {
+            "index": 1,
+            "relevance_score": 0.91
+          }
+        ]
+      }
+    ]
+  }
+}

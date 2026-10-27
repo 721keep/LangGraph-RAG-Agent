@@ -74,7 +74,9 @@ async def chat_stream(
     )
 
 
-async def get_chat_history(thread_id: UUID, user_id: UUID) -> list[Message]:
+async def get_chat_history(thread_id: UUID, user_id: UUID, session: AsyncSession) -> list[Message]:
+    # Checkpointer keys use thread_id; user_id alone does not enforce ownership.
+    await thread_service.get_thread(thread_id=thread_id, user_id=user_id, session=session)
     config = RunnableConfig(configurable={"thread_id": str(thread_id), "user_id": str(user_id)})
     checkpointer = await get_checkpointer()
     checkpoint = await checkpointer.aget(config)
