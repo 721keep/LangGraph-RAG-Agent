@@ -1,0 +1,6 @@
+# Local live acceptance harnesses depend on private plans, old fixtures or
+# unpublished browser helpers. Keep them locally; publish only portable tests.
+/acceptance.py
+/browser_live.py
+/db_probe.py
+/pdf_fixture.py

@@ -1,8 +1,10 @@
 import shutil
+from contextlib import contextmanager
+from tempfile import TemporaryDirectory
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, HTTPException, UploadFile
 from loguru import logger
 
 from app.auth.dependencies import CurrentUserDep
@@ -12,10 +14,10 @@ from app.db.pgvector_utils import (
     DOCUMENT_LOADER_MAPPING,
     delete_document_from_pgvector,
     index_document_to_pgvector,
-    search_documents_in_pgvector,
 )
 
 from . import service as document_service
+from .errors import DocumentIndexingError
 from .schemas import DocumentDeleteResponse, DocumentPublic, DocumentUploadResponse, DocumetCreate
 
 document_router = APIRouter()
@@ -45,56 +47,121 @@ async def get_knowledge_base_documents(
         session=session,
     )
 
-@document_router.post("/upload/{thread_id}", response_model=DocumentUploadResponse)
-async def upload_document(thread_id: UUID, file: UploadFile, current_user: CurrentUserDep, session: SessionDep):
+@contextmanager
+def temporary_upload(file: UploadFile):
+    """Keep the original basename inside a directory owned by this upload only."""
+    temp_dir = BASE_DIR / "tmp"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    directory = TemporaryDirectory(prefix="upload_", dir=temp_dir)
+    try:
+        file_path = Path(directory.name) / Path(file.filename.replace("\\", "/")).name
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        yield file_path
+    finally:
+        try:
+            directory.cleanup()
+        except OSError:
+            logger.warning("Could not remove an upload temporary directory.")
+
+
+async def _upload_document(file, current_user, session, *, thread_id=None, knowledge_base_id=None):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file uploaded.")
+    if Path(file.filename).suffix.lower() not in DOCUMENT_LOADER_MAPPING:
+        raise HTTPException(status_code=400, detail="Unsupported document type.")
+
     user_id = current_user.id
-    if file.filename is None:
-        logger.error("No file uploaded.")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No file uploaded.")
-
-    allowd_extensions = list(DOCUMENT_LOADER_MAPPING.keys())
-    message = f"Unsupported file type. Allowed types: {', '.join(allowd_extensions)}"
-    if Path(file.filename).suffix not in allowd_extensions:
-        logger.error(message)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
-
-    TEMP_DIR = BASE_DIR / "tmp"
-    if not TEMP_DIR.exists():
-        TEMP_DIR.mkdir()
-    temp_file_path = TEMP_DIR / file.filename
+    request_id = str(uuid4())
     document_id = None
     chunk_ids = []
+    stage = "save"
     try:
-        with open(temp_file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        logger.info(f"File '{file.filename}' saved temporarily to '{temp_file_path}'.")
-        document_data = DocumetCreate(file_name=file.filename, thread_id=thread_id)
-        new_document = await document_service.insert_document(document_data, session)
-        document_id = new_document.id
-        chunk_ids = await index_document_to_pgvector(temp_file_path, document_id, thread_id, user_id)
-        logger.info(f"File '{file.filename}' (document_id: {document_id}) successfully indexed to PGVector.")
-
-        return {"document_id": document_id, "message": f"File {file.filename} uploaded and indexed successfully."}
-    except Exception as e:
-        logger.error(f"An unexpected error occurred during upload of '{file.filename}': {e}", exc_info=True)
-        if document_id is not None:
-            if chunk_ids:
-                try:
-                    await delete_document_from_pgvector(chunk_ids)
-                    logger.info(f"Attempted cleanup of PGVector for document {document_id} after unexpected error.")
-                except Exception as pgvector_clean_err:
-                    logger.error(
-                        f"Failed to cleanup PGVector for document {document_id} during error handling: {pgvector_clean_err}"
-                    )
-            await document_service.delete_document(document_id, session)
-            logger.info(f"Rolled back database record for document {document_id} due to unexpected error.")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred while uploading '{file.filename}'.",
+        with temporary_upload(file) as temp_file_path:
+            if knowledge_base_id is not None:
+                new_document = await document_service.create_knowledge_base_document(
+                    file_name=file.filename,
+                    knowledge_base_id=knowledge_base_id,
+                    user_id=user_id,
+                    session=session,
+                )
+            else:
+                new_document = await document_service.insert_document(
+                    DocumetCreate(file_name=file.filename, thread_id=thread_id, status="processing"),
+                    session,
+                )
+            document_id = new_document.id
+            logger.info("Upload started: request_id={}, document_id={}", request_id, document_id)
+            stage = "index"
+            chunk_ids = await index_document_to_pgvector(
+                file_path=temp_file_path,
+                document_id=document_id,
+                thread_id=thread_id,
+                user_id=user_id,
+                knowledge_base_id=knowledge_base_id,
+            )
+            stage = "status"
+            changed = await document_service.update_document_status(
+                document_id=document_id, document_status="ready", session=session,
+            )
+            if not changed:
+                raise DocumentIndexingError("document_unavailable", "status", 409)
+            return {
+                "document_id": document_id,
+                "status": "ready",
+                "message": "Document uploaded and indexed successfully.",
+            }
+    except HTTPException:
+        raise
+    except Exception as error:
+        failure = error if isinstance(error, DocumentIndexingError) else DocumentIndexingError(
+            "document_status_failed" if stage == "status" else "document_save_failed", stage,
         )
-    finally:
-        if temp_file_path.exists():
-            temp_file_path.unlink()
+        logger.warning(
+            "Upload failed: request_id={}, document_id={}, stage={}, code={}",
+            request_id, document_id, failure.stage, failure.code,
+        )
+        result_status = "unknown"
+        if document_id is not None:
+            try:
+                changed = await document_service.update_document_status(
+                    document_id=document_id,
+                    document_status="failed",
+                    error_message=f"{failure.code}: {failure.message}",
+                    session=session,
+                )
+                if changed:
+                    result_status = "failed"
+            except Exception:
+                logger.warning("Upload status write failed: request_id={}, document_id={}", request_id, document_id)
+
+        # Clean only this request's known IDs after a confirmed failure/deletion.
+        # If a ready commit lost its acknowledgement, deleting vectors here could
+        # leave a ready record without its data. Preserve uncertain writes.
+        if chunk_ids and (result_status == "failed" or failure.code == "document_unavailable"):
+            try:
+                await delete_document_from_pgvector(chunk_ids)
+            except Exception:
+                logger.warning("Upload chunk cleanup failed: request_id={}", request_id)
+
+        raise HTTPException(
+            status_code=failure.http_status,
+            detail={
+                "document_id": str(document_id) if document_id else None,
+                "status": result_status,
+                "error_code": failure.code,
+                "stage": failure.stage,
+                "message": failure.message,
+                "request_id": request_id,
+            },
+        ) from None
+
+
+@document_router.post("/upload/{thread_id}", response_model=DocumentUploadResponse)
+async def upload_document(thread_id: UUID, file: UploadFile, current_user: CurrentUserDep, session: SessionDep):
+    return await _upload_document(file, current_user, session, thread_id=thread_id)
+
+
 @document_router.post(
     "/knowledge-bases/{knowledge_base_id}/upload",
     response_model=DocumentUploadResponse,
@@ -105,153 +172,8 @@ async def upload_knowledge_base_document(
     current_user: CurrentUserDep,
     session: SessionDep,
 ):
-    """
-    Upload and index a document into a knowledge base.
-    """
+    return await _upload_document(file, current_user, session, knowledge_base_id=knowledge_base_id)
 
-    user_id = current_user.id
-
-    if file.filename is None:
-        logger.error("No file uploaded.")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No file uploaded.",
-        )
-
-    allowed_extensions = list(
-        DOCUMENT_LOADER_MAPPING.keys()
-    )
-
-    message = (
-        "Unsupported file type. Allowed types: "
-        f"{', '.join(allowed_extensions)}"
-    )
-
-    if Path(file.filename).suffix.lower() not in allowed_extensions:
-        logger.error(message)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=message,
-        )
-
-    temp_dir = BASE_DIR / "tmp"
-
-    if not temp_dir.exists():
-        temp_dir.mkdir()
-
-    temp_file_path = temp_dir / file.filename
-
-    document_id = None
-    chunk_ids: list[str] = []
-
-    try:
-        # 1. Save uploaded file temporarily.
-        with open(temp_file_path, "wb") as buffer:
-            shutil.copyfileobj(
-                file.file,
-                buffer,
-            )
-
-        logger.info(
-            f"File '{file.filename}' saved temporarily "
-            f"to '{temp_file_path}'."
-        )
-
-        # 2. Verify KB ownership and create DB record.
-        # New KB documents begin in processing state.
-        new_document = (
-            await document_service.create_knowledge_base_document(
-                file_name=file.filename,
-                knowledge_base_id=knowledge_base_id,
-                user_id=user_id,
-                session=session,
-            )
-        )
-
-        document_id = new_document.id
-
-        # 3. Split + embedding + PGVector indexing.
-        chunk_ids = await index_document_to_pgvector(
-            file_path=temp_file_path,
-            document_id=document_id,
-            thread_id=None,
-            user_id=user_id,
-            knowledge_base_id=knowledge_base_id,
-        )
-
-        # 4. Mark indexing as ready.
-        await document_service.update_document_status(
-            document_id=document_id,
-            document_status="ready",
-            session=session,
-        )
-
-        logger.info(
-            f"File '{file.filename}' "
-            f"(document_id: {document_id}) "
-            f"successfully indexed into "
-            f"knowledge_base_id: {knowledge_base_id}."
-        )
-
-        return {
-            "document_id": document_id,
-            "message": (
-                f"File {file.filename} uploaded "
-                "and indexed successfully."
-            ),
-        }
-
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        logger.exception(
-            "Knowledge base document upload failed: "
-            f"file={file.filename}, "
-            f"knowledge_base_id={knowledge_base_id}, "
-            f"error={e}"
-        )
-
-        # Remove any chunks that were successfully written
-        # before the failure occurred.
-        if chunk_ids:
-            try:
-                await delete_document_from_pgvector(
-                    chunk_ids
-                )
-            except Exception:
-                logger.exception(
-                    "Failed to clean up PGVector chunks "
-                    f"for document_id={document_id}."
-                )
-
-        # Keep the database record so the frontend can
-        # expose the failed status to the user.
-        if document_id is not None:
-            try:
-                await document_service.update_document_status(
-                    document_id=document_id,
-                    document_status="failed",
-                    error_message=str(e)[:500],
-                    session=session,
-                )
-            except Exception:
-                logger.exception(
-                    "Failed to update document status "
-                    f"for document_id={document_id}."
-                )
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=(
-                f"An unexpected error occurred while "
-                f"uploading '{file.filename}'."
-            ),
-        )
-
-    finally:
-        if temp_file_path.exists():
-            temp_file_path.unlink()
 
 @document_router.delete(
     "/{document_id}",

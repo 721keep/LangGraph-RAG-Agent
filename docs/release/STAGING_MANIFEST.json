@@ -1,0 +1,2112 @@
+{
+  "categories": {
+    "A": "正式产品代码与本地图标",
+    "B": "部署/配置/文档",
+    "C": "可复用回归与隔离测试框架",
+    "D": "保留本地实验工具",
+    "E": "敏感或未经公开审核的原始证据"
+  },
+  "submit": {
+    "A": [
+      "backend/app/chat/deepseek.py",
+      "backend/app/chat/langgraph_agent.py",
+      "backend/app/chat/routes.py",
+      "backend/app/chat/schemas.py",
+      "backend/app/chat/service.py",
+      "backend/app/config.py",
+      "backend/app/db/checkpointer.py",
+      "backend/app/db/pgvector_utils.py",
+      "backend/app/documents/errors.py",
+      "backend/app/documents/routes.py",
+      "backend/app/documents/schemas.py",
+      "backend/app/documents/service.py",
+      "backend/app/rag/reranker.py",
+      "frontend/.streamlit/config.toml",
+      "frontend/gui/api_utils.py",
+      "frontend/gui/assets/brand/mark.svg",
+      "frontend/gui/assets/conversation.css",
+      "frontend/gui/assets/lucide/LICENSE",
+      "frontend/gui/assets/lucide/arrow-left.svg",
+      "frontend/gui/assets/lucide/arrow-up.svg",
+      "frontend/gui/assets/lucide/book-open.svg",
+      "frontend/gui/assets/lucide/chevron-down.svg",
+      "frontend/gui/assets/lucide/circle-alert.svg",
+      "frontend/gui/assets/lucide/circle-check.svg",
+      "frontend/gui/assets/lucide/circle-help.svg",
+      "frontend/gui/assets/lucide/circle-x.svg",
+      "frontend/gui/assets/lucide/ellipsis.svg",
+      "frontend/gui/assets/lucide/file-text.svg",
+      "frontend/gui/assets/lucide/folder-open.svg",
+      "frontend/gui/assets/lucide/globe.svg",
+      "frontend/gui/assets/lucide/log-in.svg",
+      "frontend/gui/assets/lucide/log-out.svg",
+      "frontend/gui/assets/lucide/manifest.json",
+      "frontend/gui/assets/lucide/message-square.svg",
+      "frontend/gui/assets/lucide/moon.svg",
+      "frontend/gui/assets/lucide/panel-left-close.svg",
+      "frontend/gui/assets/lucide/panel-left-open.svg",
+      "frontend/gui/assets/lucide/plus.svg",
+      "frontend/gui/assets/lucide/refresh-cw.svg",
+      "frontend/gui/assets/lucide/search.svg",
+      "frontend/gui/assets/lucide/settings-2.svg",
+      "frontend/gui/assets/lucide/shield-check.svg",
+      "frontend/gui/assets/lucide/sliders-horizontal.svg",
+      "frontend/gui/assets/lucide/sun.svg",
+      "frontend/gui/assets/lucide/trash-2.svg",
+      "frontend/gui/assets/lucide/upload.svg",
+      "frontend/gui/assets/lucide/user-round.svg",
+      "frontend/gui/assets/lucide/workflow.svg",
+      "frontend/gui/assets/resources.css",
+      "frontend/gui/assets/workspace.css",
+      "frontend/gui/chat_components.py",
+      "frontend/gui/config.py",
+      "frontend/gui/conversation_controller.py",
+      "frontend/gui/conversation_copy.py",
+      "frontend/gui/conversation_events.py",
+      "frontend/gui/conversation_session.py",
+      "frontend/gui/conversation_view.py",
+      "frontend/gui/design_tokens.py",
+      "frontend/gui/layout.py",
+      "frontend/gui/main.py",
+      "frontend/gui/pages.py",
+      "frontend/gui/resource_api.py",
+      "frontend/gui/resource_components.py",
+      "frontend/gui/resource_state.py",
+      "frontend/gui/sidebar.py",
+      "frontend/gui/state_management.py",
+      "frontend/gui/ui.py"
+    ],
+    "B": [
+      ".gitignore",
+      "PROJECT_RELEASE_R3_RESULT.md",
+      "README.md",
+      "backend/.dockerignore",
+      "deployment/release/.gitignore",
+      "deployment/release/README.md",
+      "deployment/release/backend.Dockerfile",
+      "deployment/release/backend.Dockerfile.dockerignore",
+      "deployment/release/backend.constraints.txt",
+      "deployment/release/compose.r2.yaml",
+      "deployment/release/compose.yaml",
+      "deployment/release/frontend.Dockerfile",
+      "deployment/release/frontend.Dockerfile.dockerignore",
+      "deployment/release/frontend.constraints.txt",
+      "deployment/release/manage.py",
+      "deployment/release/protect_private.ps1",
+      "deployment/release/r2-requirements.txt",
+      "deployment/release/requirements-tools.txt",
+      "deployment/release/runtime.example.json",
+      "deployment/release/runtime/bootstrap.py",
+      "deployment/release/runtime/budget_core.py",
+      "deployment/release/runtime/model_guard.py",
+      "deployment/release/runtime/r2_live.py",
+      "deployment/release/runtime/r2_models.py",
+      "deployment/release/runtime/safety.py",
+      "docker-compose.yml",
+      "docs/VALIDATION.md",
+      "docs/release/STAGING_MANIFEST.json",
+      "env.example",
+      "frontend/.dockerignore",
+      "frontend/Dockerfile"
+    ],
+    "C": [
+      "tests/README.md",
+      "tests/conftest.py",
+      "tests/delete_acceptance/README.md",
+      "tests/delete_acceptance/harness.py",
+      "tests/delete_acceptance/test_delete.py",
+      "tests/frontend_m1/test_render.py",
+      "tests/frontend_m2/test_resources.py",
+      "tests/frontend_m3/mock_api.py",
+      "tests/frontend_m3/mock_stream.py",
+      "tests/frontend_m3/preview.py",
+      "tests/frontend_m3/scenarios.py",
+      "tests/frontend_m3/test_conversations.py",
+      "tests/frontend_m3/test_previous.py",
+      "tests/offline/core.py",
+      "tests/offline/ui.yaml",
+      "tests/offline/ui_runner.py",
+      "tests/release/test_empty_thread.py",
+      "tests/release/test_manage.py",
+      "tests/release/test_r2_guard.py",
+      "tests/release/test_release_safety.py",
+      "tests/stage3/agent/bootstrap.py",
+      "tests/stage3/agent/fixture.json",
+      "tests/stage3/agent/harness.py",
+      "tests/stage3/agent/test_contract.py",
+      "tests/stage3/agent/test_regressions.py",
+      "tests/stage3/guard.py",
+      "tests/stage3/test_guard.py",
+      "tests/test_model_configuration.py",
+      "tests/test_upload_reliability.py"
+    ]
+  },
+  "exclude_existing_untracked": [
+    {
+      "path": "CODEX_AUDIT_REPORT_20261023.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "FOURTH_STAGE_FRONTEND_F1_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "FOURTH_STAGE_FRONTEND_LIVE_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "FRONTEND_REDESIGN_M1_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "FRONTEND_REDESIGN_M2_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "FRONTEND_REDESIGN_M3_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "FRONTEND_REDESIGN_M4_RESULT.md",
+      "category": "E",
+      "reason": "含已知临时验收凭据，必须排除，保留本地，不披露值"
+    },
+    {
+      "path": "PROJECT_RELEASE_PREPARATION_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "PROJECT_RELEASE_R1_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "PROJECT_RELEASE_R2_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "THIRD_STAGE_AGENT_INTEGRATION_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "THIRD_STAGE_DEEPSEEK_E1_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "THIRD_STAGE_DEEPSEEK_LIVE_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "THIRD_STAGE_FULL_RAG_E2_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "THIRD_STAGE_INTEGRATION_PLAN.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "THIRD_STAGE_RAG_INTEGRATION_RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "deployment/release/verify.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/delete_acceptance/.private/.gitignore",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/delete_acceptance/RESULT.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/delete_acceptance/artifacts/delete_acceptance.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/delete_acceptance/artifacts/delete_results.xml",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/delete_acceptance/artifacts/existing_files_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/delete_acceptance/artifacts/final_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/delete_acceptance/artifacts/plan.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/delete_acceptance/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/delete_acceptance/prepare.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/delete_acceptance/verify_result.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/.gitignore",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_dark_chat.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_dark_documents.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_dark_home.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_failure.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_final_dark.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_final_light.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_light_home.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_metrics_after.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_metrics_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_mobile.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/browser_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/final_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/render_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/artifacts/visual_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m1/baseline.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/browser_support.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/browser_test.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/mock_api.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/preview.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/vendor_icons.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/verify_workspace.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m1/visual_check.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/.gitignore",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/browser_failure.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/browser_metrics_after.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/browser_metrics_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/browser_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/documents_dark.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/documents_light.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/documents_mobile.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/documents_uploaded_light.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/final_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/knowledge_403.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/knowledge_dark.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/knowledge_light.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/knowledge_long_name.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/knowledge_mobile.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/m1_cases.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/m1_regression.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/resource_tests.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/artifacts/runtime_versions.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m2/browser_support.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/browser_test.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/.streamlit/config.toml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/api_utils.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/brand/mark.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/LICENSE",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/arrow-left.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/arrow-up.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/book-open.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/chevron-down.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/circle-alert.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/circle-check.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/circle-help.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/circle-x.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/ellipsis.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/file-text.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/folder-open.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/globe.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/log-in.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/log-out.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/manifest.json",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/message-square.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/moon.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/panel-left-close.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/panel-left-open.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/plus.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/refresh-cw.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/search.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/settings-2.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/shield-check.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/sliders-horizontal.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/sun.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/trash-2.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/upload.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/user-round.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/lucide/workflow.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/assets/workspace.css",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/chat_components.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/config.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/design_tokens.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/layout.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/main.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/pages.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/sidebar.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/state_management.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/m1_snapshot/gui/ui.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/mock_api.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/preserve_m1.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/preview.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/test_m1_regression.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m2/verify_workspace.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/.gitignore",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/browser_failure.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/browser_metrics_after.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/browser_metrics_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/browser_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/chat_error.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/conversation_dark.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/conversation_light.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/conversation_mobile.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/conversation_summary_dark.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/conversation_tests.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/final_conversation_desktop.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/final_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/interrupted.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/m1_cases.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/no_evidence.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/previous_tests.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/runtime_versions.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/artifacts/visual_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m3/browser_support.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/browser_test.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/.streamlit/config.toml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/api_utils.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/brand/mark.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/LICENSE",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/arrow-left.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/arrow-up.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/book-open.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/chevron-down.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/circle-alert.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/circle-check.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/circle-help.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/circle-x.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/ellipsis.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/file-text.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/folder-open.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/globe.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/log-in.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/log-out.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/manifest.json",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/message-square.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/moon.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/panel-left-close.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/panel-left-open.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/plus.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/refresh-cw.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/search.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/settings-2.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/shield-check.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/sliders-horizontal.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/sun.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/trash-2.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/upload.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/user-round.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/lucide/workflow.svg",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/resources.css",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/assets/workspace.css",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/chat_components.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/config.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/design_tokens.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/layout.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/main.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/pages.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/resource_api.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/resource_components.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/resource_state.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/sidebar.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/state_management.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/m2_snapshot/gui/ui.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/prepare.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/preserve_m2.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/verify_workspace.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m3/visual_check.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/.gitignore",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/README.md",
+      "category": "E",
+      "reason": "含已知临时验收凭据，必须排除，保留本地，不披露值"
+    },
+    {
+      "path": "tests/frontend_m4/arm.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/after_delete.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/baseline.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/before_delete.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/browser_failure.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/browser_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/document_deleted.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/failure.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/final_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/followup.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/history_dark.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/history_relogin.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/knowledge_deleted.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/m4_workspace_test.pdf",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/model_budget.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/operations.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/plan.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/positive.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/preflight.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/setup.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/signup.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/artifacts/upload_ready.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/frontend_m4/audit.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/bootstrap.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/browser_live.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/browser_support.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/control.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/frontend_entry.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/guard.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/prepare.py",
+      "category": "E",
+      "reason": "含已知临时验收凭据，必须排除，保留本地，不披露值"
+    },
+    {
+      "path": "tests/frontend_m4/server.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/start_browser.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/test_guard.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/frontend_m4/verify_workspace.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/browser_check.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/browser_support.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/prepare_r2.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/r2_audit.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/r2_browser.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/r2_control.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/r2_finalize.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/r2_http.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/release/start_browser.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/.private/.gitignore",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/Dockerfile",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/Dockerfile.dockerignore",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/README.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/agent/README.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/agent/formal_counts.sql",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/agent/test_postgres.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/agent/test_recovery_process.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_database_after.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_database_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_final_audit.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_guard_status.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_postgres_manifest.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_production_counts_after.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_recovery_process.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_regression_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/agent_runtime.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/document_events.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_assessment.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_database_after.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_database_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_final_audit.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_model_budget.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_preflight.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_saved_state_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e1_tokenizer_manifest.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_A_B_positive_events.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_C_no_evidence_events.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_database_after.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_database_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_final_audit.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_model_budget.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_preflight.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/e2_saved_state_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_browser_failure.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_browser_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_database_after.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_database_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_http_preparation.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_live_rag_test.pdf",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_model_budget.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_operations.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_plan.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_preflight.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_preparation_audit.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_production_after.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_production_before.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f15_retention_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_agent_postgres_manifest.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_agent_recovery_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_backend_versions.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_browser_failure.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_browser_no_evidence.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_browser_positive.png",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_browser_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_checkpoint_verification.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_container_status.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_final_audit.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_frontend_versions.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_http_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_isolation.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_production_after.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_production_before.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_protection_before.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_render_result.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_replay_runs.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_retention_audit.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_stage3_after.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/f1_stage3_before.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/final_audit.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/final_status.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/gate_probe.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/model_budget.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/pdf_parse.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/production_after.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/production_before.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/run_fake.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/run_live.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/stage3_rag_test.pdf",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/startup.json",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/artifacts/test_database_counts.jsonl",
+      "category": "E",
+      "reason": "私有配置/账本/日志/截图等原始证据，保留本地"
+    },
+    {
+      "path": "tests/stage3/client.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/README.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/assess.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/budget.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/launch.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/run.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/source_manifest.json",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/test_assess.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/test_budget.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/transport.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e1/verify_saved.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/README.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/guard_e2.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/launch.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/run.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/scope.json",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/source_manifest.json",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/test_guard.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/e2/verify_saved.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/README.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/audit_retention.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/browser_test.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/frontend_entry.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/prepare.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/render_tests.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/server.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/test_boundaries.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/test_http.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f1/verify_persisted.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/README.md",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/arm.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/browser_live.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/browser_support.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/compose.yaml",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/control.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/frontend_entry.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/guard.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/prepare.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/prepare_kb.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/server.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/snapshot.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/test_guard.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/f15/verify_live.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/gate_probe.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/pdf_fixture.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/prepare.py",
+      "category": "E",
+      "reason": "含已知临时验收凭据，必须排除，保留本地，不披露值"
+    },
+    {
+      "path": "tests/stage3/production_snapshot.sql",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/protect_private.ps1",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/requirements-test.txt",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/server.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    },
+    {
+      "path": "tests/stage3/verify_runtime.py",
+      "category": "D",
+      "reason": "历史阶段报告或依赖本机资源的一次性工具；保留本地，不作为产品启动依赖"
+    }
+  ],
+  "original_eol_only_49": [
+    ".gitignore",
+    "LICENSE",
+    "backend/app/auth/dependencies.py",
+    "backend/app/auth/routes.py",
+    "backend/app/auth/schemas.py",
+    "backend/app/auth/utils.py",
+    "backend/app/db/main.py",
+    "backend/app/db/models.py",
+    "backend/app/knowledge_bases/routes.py",
+    "backend/app/knowledge_bases/schemas.py",
+    "backend/app/knowledge_bases/service.py",
+    "backend/app/mcp/adapter.py",
+    "backend/app/mcp/adapter_smoke_test.py",
+    "backend/app/mcp/agent_tool_wiring_test.py",
+    "backend/app/mcp/failure_smoke_test.py",
+    "backend/app/mcp/invalid_arguments_smoke_test.py",
+    "backend/app/mcp/server.py",
+    "backend/app/mcp/server_unavailable_smoke_test.py",
+    "backend/app/mcp/smoke_test.py",
+    "backend/app/mcp/stream_observability_test.py",
+    "backend/app/mcp/timeout_smoke_test.py",
+    "backend/app/middleware.py",
+    "backend/app/tools/registry.py",
+    "backend/app/users/routes.py",
+    "backend/app/users/schemas.py",
+    "backend/app/users/service.py",
+    "backend/evaluation/agent_answer_eval.py",
+    "backend/evaluation/agent_citation_eval.py",
+    "backend/evaluation/agent_failure_eval.py",
+    "backend/evaluation/agent_routing_eval.py",
+    "backend/evaluation/answer_eval.py",
+    "backend/evaluation/answer_judge.py",
+    "backend/evaluation/citation_eval.py",
+    "backend/evaluation/data/agent_routing_eval.jsonl",
+    "backend/evaluation/data/retrieval_eval.jsonl",
+    "backend/evaluation/fixtures/retrieval_eval_source.txt",
+    "backend/evaluation/inspect_chunks.py",
+    "backend/evaluation/load_dataset.py",
+    "backend/evaluation/metrics.py",
+    "backend/evaluation/pipeline_eval.py",
+    "backend/evaluation/prepare_corpus.py",
+    "backend/evaluation/reports/agent_failure_reliability.csv",
+    "backend/evaluation/reports/agent_failure_reliability.json",
+    "backend/evaluation/reports/agent_routing_deepseek-v4-flash.csv",
+    "backend/evaluation/reports/agent_routing_deepseek-v4-flash.json",
+    "backend/evaluation/reranker_eval.py",
+    "backend/evaluation/retrieval_eval.py",
+    "backend/evaluation/threshold_eval.py",
+    "backend/requirements.txt"
+  ],
+  "eol_handling": "49 文件工作区行尾不还原；.gitignore 新增实际安全规则，仅 index 以 HEAD LF 暂存；其余 48 不暂存。reranker 真实修改也仅 index 保持 HEAD LF。",
+  "always_exclude": [
+    "**/.private/**",
+    ".env",
+    ".env.* (except public .env.example)",
+    "**/artifacts/**",
+    "**/browser-profile/**",
+    ".release-artifacts/**",
+    "真实测试账号秘密/数据库文件/模型请求账本"
+  ]
+}

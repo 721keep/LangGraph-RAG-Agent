@@ -1,533 +1,135 @@
-# 🤖 LangGraph Agentic RAG Platform
+# LangGraph-RAG-Agent
 
-An engineering-oriented **Agentic RAG system** built with **FastAPI, LangGraph, PostgreSQL/pgvector, MCP, and Streamlit**.
+一个使用 **FastAPI、LangGraph、PostgreSQL/pgvector 和 Streamlit** 的 AI Agent + RAG Workspace。
+原仓库：[721keep/LangGraph-RAG-Agent](https://github.com/721keep/LangGraph-RAG-Agent)。
 
-The platform combines private knowledge retrieval, web search, MCP tools, persistent conversation memory, retrieval quality control, and agent evaluation into a unified AI application stack.
+新版 Agent Workspace 提供左侧导航与会话列表、轻量模型/知识库工具栏、独立知识库和文档管理、
+流式对话、工具执行摘要与可折叠详情、Citation 来源卡片。默认浅色，支持深色主题；原创节点网络 Logo
+及 29 个本地 Lucide 图标随源码分发，不依赖图标 CDN。
 
-It is designed not only to make an Agent work, but also to make its **retrieval, tool routing, evidence quality, failures, and execution process observable and evaluable**.
+## 能力与技术栈
 
-## ✨ Highlights
+- 多知识库与 PDF / DOCX / TXT 上传，显示 processing / ready / failed 状态；超时结果不确定时主动核验，避免自动重传。
+- LangGraph Agent 使用 Tool Calling 选择 RAG、Web Search 或 MCP 工具；工具状态与模型回答分开显示。
+- 独立配置 Chat、Embedding 与 Reranker；已验证 DeepSeek 官方 Chat、SiliconFlow 非 Pro BGE-M3 和 BGE Reranker。
+- pgvector 检索、重排序、Evidence Gate 与文档/页码/Chunk 引用；不凭向量维度推断模型兼容性。
+- JWT 用户认证、Thread 权限检查、PostgreSQL Checkpointer、多轮对话和历史恢复。
+- Python、FastAPI、LangChain/LangGraph、PostgreSQL、pgvector、MCP、Streamlit；保留原有评估工具。
 
-- **Agentic RAG**
-  LangGraph ReAct Agent dynamically routes requests between private knowledge retrieval, web search, MCP tools, and direct model responses.
-
-- **Multi-Knowledge-Base Management**
-  Users can create independent knowledge bases, upload PDF/DOCX/TXT documents, bind conversations to a knowledge base, and manage indexed documents.
-
-- **Retrieval Quality Pipeline**
-  Semantic retrieval is enhanced with configurable Top-K, similarity threshold filtering, reranking, and an evidence gate to reduce low-confidence answers.
-
-- **Citation & Retrieval Observability**
-  Retrieval results expose source metadata, similarity scores, rerank scores, candidate counts, filtering results, and final evidence used by the Agent.
-
-- **MCP Tool Ecosystem**
-  Native LangChain tools and MCP tools are integrated through a unified tool registry, allowing the Agent to dynamically discover and invoke external capabilities.
-
-- **Agent Evaluation & Reliability**
-  Includes deterministic and real-model evaluation for tool routing, argument generation, no-tool decisions, and controlled tool failure scenarios.
-
-- **Productized Agent UI**
-  Streamlit interface provides model configuration, knowledge base management, retrieval controls, conversation management, and structured RAG/Web/MCP execution cards.
-
-- **Persistent Memory & Authentication**
-  JWT-based user authentication, isolated user resources, threaded conversations, and LangGraph PostgreSQL checkpointer persistence.
-
-- **Dockerized Full Stack**
-  FastAPI backend, Streamlit frontend, and PostgreSQL/pgvector are orchestrated through Docker Compose with health checks and service dependencies.
-
-## 🎯 System Capabilities
-
-```text
-User Query
-    │
-    ▼
-LangGraph ReAct Agent
-    │
-    ├── Direct LLM Response
-    │
-    ├── Private Knowledge Retrieval
-    │      └── Vector Search
-    │          → Similarity Threshold
-    │          → Reranker
-    │          → Evidence Gate
-    │          → Citation
-    │
-    ├── Web Search
-    │
-    └── MCP Tools
-           └── Unified Tool Registry
-
-PostgreSQL / pgvector
-    ├── Users
-    ├── Threads
-    ├── Knowledge Bases
-    ├── Documents
-    ├── Vector Embeddings
-    └── LangGraph Checkpoints
-
+```mermaid
+flowchart LR
+    U[浏览器] --> S[Streamlit Agent Workspace]
+    S --> F[FastAPI / JWT / Thread]
+    F --> G[LangGraph Agent]
+    G <--> D[DeepSeek Chat]
+    G --> T[Tool Registry]
+    T --> R[RAG / Evidence Gate / Citation]
+    R --> E[SiliconFlow BGE-M3]
+    R <--> P[(PostgreSQL + pgvector)]
+    R --> B[BGE Reranker]
+    G <--> C[(PostgreSQL Checkpointer)]
+    T -.部署策略允许时.-> X[Web Search / MCP]
 ```
-## 💻 Tech Stack
 
-| Layer | Technologies |
-| --- | --- |
-| Agent | LangGraph, LangChain, ReAct, Tool Calling |
-| Backend | FastAPI, Python, Pydantic v2, SQLAlchemy 2.0 |
-| RAG | Embeddings, pgvector, Similarity Threshold, Reranker, Evidence Gate |
-| Tool Ecosystem | Native LangChain Tools, Tavily Web Search, MCP |
-| Database | PostgreSQL, pgvector |
-| Memory | LangGraph PostgreSQL Checkpointer |
-| Frontend | Streamlit |
-| Authentication | JWT |
-| Evaluation | Agent Routing Evaluation, Failure Reliability Evaluation |
-| Deployment | Docker, Docker Compose |
+## 新版独立部署
 
-## 📋 Prerequisites
-
-- Python 3.12+
-- Docker and Docker Compose (recommended for Postgres + full stack)
-
-## 🚀 Quick Start
-
-### 1. Clone the repository
+需要 Git、Python 3 和 Docker Engine/Desktop + Compose v2；构建时需要下载基础镜像与锁定依赖。
+已验证环境为 Windows Docker Desktop / WSL、容器 Python 3.12.11。
+干净机器不需要已有 M4、Stage3 容器或私有测试配置。
 
 ```bash
 git clone https://github.com/721keep/LangGraph-RAG-Agent.git
 cd LangGraph-RAG-Agent
-git checkout dev
+# 当前发布变更尚在 fix/rag-upload-reliability；发布后使用包含本 README 的提交/分支。
+python3 -m venv .venv-tools
+# Linux/WSL: source .venv-tools/bin/activate
+# Windows PowerShell: .venv-tools\Scripts\Activate.ps1
+python -m pip install -r deployment/release/requirements-tools.txt
 ```
 
-### 2. Configure environment variables
+首次安装在本地私有 `.env` 中填写下列字段，不把值粘贴到命令行、Issue 或日志。
+已存在 `.env` 的机器保留原文件；不要覆盖旧配置。
 
-Copy the environment template:
+| 字段 | 用途 |
+|---|---|
+| `CHAT_API_KEY` | DeepSeek 官方 API |
+| `EMBEDDINGS_API_KEY` | SiliconFlow BGE-M3 |
+| `RERANK_API_KEY` | SiliconFlow BGE Reranker，可独立密钥 |
+| `TAVILY_API_KEY` | 当前 Settings / prepare 所需；默认部署不开放真实搜索 |
 
 ```bash
-cp env.example .env
+# 仅全新安装运行一次；已生成私有配置时跳过，脚本拒绝覆盖。
+python deployment/release/manage.py prepare
+python deployment/release/manage.py build
+python deployment/release/manage.py up
 ```
 
-For Windows PowerShell:
-
-```powershell
-Copy-Item env.example .env
-```
-
-Then configure the required API keys, model settings, and database credentials in `.env`.
-
-### 3. Start the full stack
+访问 **http://127.0.0.1:18510**。Backend 与 PostgreSQL 不发布宿主机端口。
+prepare 生成独立数据库密码与 JWT，保存到 Git 忽略的 `deployment/release/.private/`；
+轮换 JWT 会使旧签名登录令牌失效。请安全备份 runtime、数据库密码、实例身份证明与持久卷。
+Windows 权限加固及原生 Linux Secret 读取注意事项见 [部署说明](deployment/release/README.md)。
 
 ```bash
-docker compose up --build
+python deployment/release/manage.py stop      # 停止本部署，保留全部数据
+python deployment/release/manage.py ps
+python deployment/release/manage.py logs
+python deployment/release/manage.py build     # 源码更新后重建镜像
+python deployment/release/manage.py recreate  # 使用同一已验明的持久卷重建容器
 ```
 
-Or run the services in the background:
+### 当前模型开关：默认关闭
+
+**页面可启动不代表已开放日常模型调用。** 默认 `RELEASE_MODEL_MODE=off`，后端仅连接 internal 网络，
+HTTP Transport 阻断模型外发，Chat/上传返回受控 503。登录、知识库/文档列表、历史等不依赖模型的功能仍可使用。
+
+R2 的 `bounded` 入口只用于已授权验收，限定用户、PDF、问题、HTTP 次数与 Token；历史账本已封存，
+不能重置或重新 arm。它需要私有验收计划和已校验 tokenizer，不是干净安装或日常使用步骤。
+
+现在支持独立的 **daily** 日常模式，保留三连接/实例/Collection 校验，使用新的持久化请求账本，
+不固定问题、用户和 PDF。当前机器已准备好，可以：
 
 ```bash
-docker compose up -d --build
+python3 deployment/release/manage.py up-daily
 ```
 
-### 4. Access the application
-
-| Service | Address |
-| --- | --- |
-| Streamlit UI | `http://localhost:8501` |
-| FastAPI Backend | `http://localhost:8000/api/v1` |
-| Swagger UI | `http://localhost:8000/api/v1/docs` |
-| ReDoc | `http://localhost:8000/api/v1/redoc` |
-
-The Docker Compose stack starts:
-
-- PostgreSQL with pgvector
-- FastAPI backend
-- Streamlit frontend
-
-## 🧰 Local Development
-
-### 1) Backend (FastAPI)
-
-```bash
-cd backend
-python -m venv .venv
-.venv/Scripts/activate     # Windows
-# source .venv/bin/activate  # Linux/macOS
-pip install -r requirements.txt
-```
-
-Ensure a Postgres instance is running with pgvector. Example (Docker):
-```bash
-docker run --name langgraph_postgres -p 5432:5432 \
-  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=test -e POSTGRES_DB=langgraph_db \
-  -d pgvector/pgvector:pg16
-```
-
-Run the API:
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --reload-dir ./app
-```
-
-### 2) Frontend (Streamlit)
-
-```bash
-cd frontend
-python -m venv .venv
-.venv/Scripts/activate     # Windows
-# source .venv/bin/activate  # Linux/macOS
-pip install -r requirements.txt
-streamlit run gui/main.py
-```
-
-## 🔧 Environment Variables
-
-Configuration is loaded from the project-root `.env` file.
-
-Start from the provided template:
-
-```bash
-cp env.example .env
-```
-
-For Windows PowerShell:
-
-```powershell
-Copy-Item env.example .env
-```
-
-### Model & Tool Configuration
-
-| Variable | Purpose |
-| --- | --- |
-| `CHAT_API_KEY` | API key used by the configured chat model |
-| `MODEL_PROVIDER` | LangChain model provider |
-| `MODEL_NAMES` | Available chat model list |
-| `MODEL_BASE_URL` | Optional OpenAI-compatible chat model endpoint |
-| `DASHSCOPE_API_KEY` | API key used by embeddings and reranker services |
-| `EMBEDDINGS_MODEL_NAME` | Embedding model used for indexing and retrieval |
-| `EMBEDDINGS_BASE_URL` | Optional embedding service endpoint |
-| `TAVILY_API_KEY` | API key used by the web search tool |
-| `APP_TIMEZONE` | Application timezone |
-
-### Authentication
-
-| Variable | Purpose |
-| --- | --- |
-| `TOKEN_BEARER_URL` | Authentication token endpoint |
-| `JWT_SECRET` | Secret used to sign JWT tokens |
-| `JWT_ALGORITHM` | JWT signing algorithm |
-| `ACCESS_TOKEN_EXPIRY_MINS` | Access token expiration time |
-| `REFRESH_TOKEN_EXPIRY_DAYS` | Refresh token expiration time |
-
-### PostgreSQL / pgvector
-
-| Variable | Purpose |
-| --- | --- |
-| `POSTGRES_HOST` | PostgreSQL host |
-| `POSTGRES_PORT` | PostgreSQL port |
-| `POSTGRES_USER` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | PostgreSQL password |
-| `POSTGRES_DATABASE` | Application database name |
-| `PGVECTOR_COLLECTION_NAME` | pgvector collection used by the RAG pipeline |
-
-### Frontend
-
-| Variable | Purpose |
-| --- | --- |
-| `BACKEND_BASE_URL` | FastAPI base URL used by the Streamlit frontend |
-
-See `env.example` for the complete configuration template.
-
-> Do not commit real API keys, passwords, or JWT secrets to the repository.
-
-## 🧩 API Overview
-
-All backend APIs are exposed under:
-
-```text
-/api/v1
-```
-
-Interactive API documentation is available at:
-
-```text
-http://localhost:8000/api/v1/docs
-```
-
-### Authentication
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/auth/signup` | Create a user account |
-| `POST` | `/auth/login` | Login and obtain access / refresh tokens |
-| `GET` | `/auth/logout` | Logout the current user |
-| `GET` | `/auth/refresh-token` | Generate a new access token |
-
-### Users
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/users/me` | Get the current user |
-| `PUT` | `/users/user-profile/{user_id}` | Update a user profile |
-| `DELETE` | `/users/user-profile/{user_id}` | Delete a user profile |
-
-### Threads
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/threads/` | Create a conversation thread |
-| `GET` | `/threads/` | List the current user's threads |
-| `GET` | `/threads/{thread_id}` | Get a thread |
-| `PATCH` | `/threads/{thread_id}` | Update a thread |
-| `PATCH` | `/threads/{thread_id}/knowledge-base` | Bind, switch, or unbind a knowledge base |
-| `DELETE` | `/threads/{thread_id}` | Delete a thread |
-
-### Knowledge Bases
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/knowledge-bases/` | Create a knowledge base |
-| `GET` | `/knowledge-bases/` | List the current user's knowledge bases |
-| `GET` | `/knowledge-bases/{knowledge_base_id}` | Get a knowledge base |
-| `PATCH` | `/knowledge-bases/{knowledge_base_id}` | Update a knowledge base |
-| `DELETE` | `/knowledge-bases/{knowledge_base_id}` | Delete a knowledge base |
-
-### Documents
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/documents/{thread_id}` | List documents associated with a legacy thread scope |
-| `POST` | `/documents/upload/{thread_id}` | Upload and index a document into a legacy thread scope |
-| `GET` | `/documents/knowledge-bases/{knowledge_base_id}` | List documents in a knowledge base |
-| `POST` | `/documents/knowledge-bases/{knowledge_base_id}/upload` | Upload and index a document into a knowledge base |
-| `DELETE` | `/documents/{document_id}` | Delete a document and its vector chunks |
-
-Supported document formats:
-
-```text
-PDF · DOCX · TXT
-```
-
-### Chat
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `POST` | `/chat/` | Start a streaming chat request |
-| `GET` | `/chat/config` | Get available model configuration |
-| `POST` | `/chat/{thread_id}` | Run an authenticated Agent conversation |
-| `GET` | `/chat/{thread_id}` | Retrieve persisted chat history |
-
-## 📡 Streaming Protocol
-
-The authenticated chat endpoint streams newline-delimited JSON events so the frontend can render the Agent execution process in real time.
-
-### Event Types
-
-#### LLM Output
-
-```json
-{
-  "type": "llm_chunk",
-  "content": "Generated response..."
-}
-```
-
-#### Tool Call
-
-```json
-{
-  "type": "tool_call",
-  "name": "retrieve_user_documents",
-  "args": {
-    "query": "project architecture"
-  }
-}
-```
-
-#### Tool Result
-
-```json
-{
-  "type": "tool_result",
-  "name": "retrieve_user_documents",
-  "content": "..."
-}
-```
-
-MCP tool results may additionally include structured execution metadata:
-
-```json
-{
-  "type": "tool_result",
-  "name": "get_server_status",
-  "tool_source": "mcp",
-  "server_name": "test-mcp-server",
-  "status": "success",
-  "success": true,
-  "latency_ms": 12,
-  "error_reason": null,
-  "content": "..."
-}
-```
-
-The Streamlit frontend consumes these events and renders user-facing execution cards for:
-
-- Agent tool calls
-- Knowledge base retrieval
-- Web search
-- MCP tool execution
-- Retrieval evidence and scores
-- Tool and retrieval failures
-
-## 🏗️ Architecture
-
-The system is organized around a LangGraph ReAct Agent. The Agent selects the appropriate execution path according to the user request while the backend provides persistence, retrieval, tool integration, and streaming.
-
-```text
-┌─────────────────────────────────────────────┐
-│                Streamlit UI                 │
-│                                             │
-│ Model / Knowledge Base / Retrieval Config   │
-│ Conversation / Tool & Evidence Cards        │
-└──────────────────────┬──────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────┐
-│                 FastAPI API                 │
-│                                             │
-│ Auth / Threads / Knowledge Bases / Docs     │
-│ Chat Streaming / Configuration              │
-└──────────────────────┬──────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────┐
-│             LangGraph ReAct Agent           │
-│                                             │
-│     Reasoning · Routing · Tool Calling       │
-└─────────────┬────────────┬────────────┬──────┘
-              │            │            │
-              ▼            ▼            ▼
-       ┌────────────┐ ┌──────────┐ ┌──────────┐
-       │ RAG Tool   │ │Web Search│ │ MCP Tool │
-       └─────┬──────┘ └──────────┘ └──────────┘
-             │
-             ▼
-       Vector Search
-             │
-             ▼
-    Similarity Threshold
-             │
-             ▼
-          Reranker
-             │
-             ▼
-        Evidence Gate
-             │
-             ▼
-      Evidence + Citation
-
-              │
-              ▼
-┌─────────────────────────────────────────────┐
-│           PostgreSQL + pgvector             │
-│                                             │
-│ Users / Threads / Knowledge Bases / Docs    │
-│ Embeddings / LangGraph Checkpoints          │
-└─────────────────────────────────────────────┘
-```
-## 📊 Evaluation Results
-
-The project includes an evaluation framework for both Agent routing quality and tool failure reliability.
-
-### Agent Routing Evaluation
-
-The real-model routing evaluation covers four routing categories:
-
-- Private knowledge retrieval
-- Web search
-- MCP tool execution
-- No-tool direct response
-
-Current evaluation results:
-
-| Metric | Result |
-| --- | ---: |
-| Total Cases | 8 |
-| Tool Selection Accuracy | 100% |
-| Wrong Tool Rate | 0% |
-| No-Tool Accuracy | 100% |
-| Argument Accuracy | 100% |
-
-Per-tool routing accuracy:
-
-| Route | Correct / Total | Accuracy |
-| --- | ---: | ---: |
-| Knowledge Retrieval | 2 / 2 | 100% |
-| Web Search | 2 / 2 | 100% |
-| MCP Tool | 2 / 2 | 100% |
-| No Tool | 2 / 2 | 100% |
-
-### Failure Reliability Evaluation
-
-Controlled failure tests verify that MCP tool failures are converted into structured and observable Agent errors.
-
-| Failure Scenario | Result |
-| --- | --- |
-| Tool Execution Error | PASS |
-| Invalid Arguments | PASS |
-| Tool Timeout | PASS |
-| MCP Server Unavailable | PASS |
-
-**Failure Handling Pass Rate: 100% (4 / 4)**
-
-Evaluation reports are stored under:
-
-```text
-backend/evaluation/reports/
-```
-
-Representative reports:
-
-```text
-agent_routing_deepseek-v4-flash.json
-agent_routing_deepseek-v4-flash.csv
-agent_failure_reliability.json
-agent_failure_reliability.csv
-```
-
-## 🖼️ Screenshots
-
-### Agent Workspace
-
-The authenticated workspace exposes the active model, knowledge base, retrieval configuration, available Agent tools, and conversation history.
-
-![Agent Workspace](./screenshots/home-authenticated.png)
-
-### RAG Retrieval & Evidence
-
-Knowledge base retrieval exposes selected evidence together with retrieval metadata, rerank scores, and citation information.
-
-![RAG Retrieval](./screenshots/rag-retrieval.png)
-
-### MCP Tool Execution
-
-MCP tool calls are rendered as structured execution cards with tool status, server information, latency, and execution details.
-
-![MCP Tool](./screenshots/mcp-tool.png)
-
-### Web Search
-
-Web search results are presented as structured source cards instead of raw tool output.
-
-![Web Search](./screenshots/web-search.png)
-
-### Unauthenticated Home
-
-The public landing page provides authentication entry points and a concise overview of the Agent platform.
-
-![Unauthenticated Home](./screenshots/home.png)
-
-## 📝 License
-
-Licensed under the [MIT License](./LICENSE).
-
-## 🤝 Contributing
-
-Contributions are welcome! Please open an issue or submit a PR.
-
-
+首次需 prepare、从公开固定 revision 校验 tokenizer、显式 prepare-daily 和 build-daily；不需要历史测试容器。
+完整命令、配额、重建、停止、暂停恢复见
+[日常运行说明](deployment/release/DAILY.md)。默认基础部署仍关闭模型；daily 不重置或重新启用 R2 封存账本。
+仅允许固定 DeepSeek/SiliconFlow 模型接口，真实外部搜索/MCP 不随 daily 自动开放。
+
+## 数据与模型隔离
+
+| 新版 profile | 固定配置 |
+|---|---|
+| Compose 项目 / PostgreSQL | `rag-release-r1` / `langgraph_rag_bge_prod` |
+| Collection / 持久卷 | `bge_m3_1024_v1` / `rag_release_r1_pgdata_v1` |
+| Chat | `deepseek-flash`，DeepSeek 官方 API |
+| Embedding | `BAAI/bge-m3`，OpenAI 兼容 `/v1/embeddings`，1024 维 |
+| Reranker | `BAAI/bge-reranker-v2-m3`，SiliconFlow `/v1/rerank` |
+
+业务、向量、Checkpointer 使用同一新 PostgreSQL 实例的独立业务表和检查点表；启动前校验真实连接与实例身份。
+旧 `docker-compose.yml` / `env.example` 是保留的 legacy 路径，默认 `my_collection`，不是新版启动入口。
+旧集合中的 271 条历史向量完整保留，没有迁移或混用；相同维度也不能与 BGE-M3 混检。
+旧 ready 文档不会自动成为新集合的有效资料，需未来独立授权的导入/重建与状态核对。
+
+## 测试与验证边界
+
+[测试指南](tests/README.md) 提供禁网离线回归和本地 Mock UI 测试。
+[验证记录摘要](docs/VALIDATION.md) 区分模拟、真实数据库与历史真实供应商验收。
+R2 真实验收完成 DeepSeek 3 次、Embedding 2 次、Reranker 1 次 HTTP 200，涵盖 PDF、RAG、Citation、
+多轮、重启恢复与真实删除。R3 的禁网回归之后，新增 daily 已完成真实浏览器上传、RAG、追问与重启恢复，
+详见 [日常运行结果](PROJECT_DAILY_RUNTIME_RESULT.md)；相关离线测试 191 项及 3 项错误展示 AppTest 通过。
+实际 Token 和费用依供应商账单，历史成功不承诺之后账户、服务或网络状态。
+
+## 已知限制
+
+- 默认 off 不开放模型；日常真实聊天和上传需要显式 up-daily，并受实例共享请求与 Token 配额限制。
+- 原生 Linux 的私有文件权限与 Compose Secret 非 root 读取策略尚未独立验收。
+- Streamlit 刷新可能丢失仅保存在浏览器会话中的结构化工具面板，历史文本可从 Checkpointer 恢复。
+- Citation 的页码、Chunk、分数只显示后端实际返回字段；不会伪造缺失数据或降低 Evidence Gate 阈值。
+- 后台上传仍非持久任务队列，进程中断后的 processing 状态需要核验；不要因超时自动重传。
+- Web Search/MCP 保留原架构，但新版安全部署默认不开放外部调用。
+
+## License
+
+MIT，保留原 [LICENSE](LICENSE)。本地 Lucide SVG 按其随附 ISC License 分发。

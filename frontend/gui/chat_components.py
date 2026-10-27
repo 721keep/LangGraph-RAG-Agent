@@ -3,228 +3,18 @@ import json
 
 import api_utils
 import streamlit as st
+import ui
 from loguru import logger
 from state_management import (
-    new_chat,
     update_thread,
     update_user_threads,
 )
 
 
 def authenticated_user_chat_interface_component():
-    is_first_message = False
-    for message in st.session_state["thread"].messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    from conversation_controller import chat_interface
+    chat_interface(authenticated=True)
 
-    if prompt := st.chat_input(
-            "Ask a question...",
-            key="prompt",
-        ):
-        if st.session_state["thread"].id is None:
-            is_first_message = True
-
-            # Preserve the KB selected before the Thread exists.
-            selected_knowledge_base_id = (
-                st.session_state["thread"].knowledge_base_id
-            )
-
-            create_response = api_utils.create_new_thread()
-            thread_id = create_response.get("id")
-
-            if thread_id is None:
-                raise ValueError(
-                    "Failed to create a new thread."
-                )
-
-            st.session_state["thread"].id = thread_id
-
-            # If a KB was selected for the new chat,
-            # persist the binding immediately after Thread creation.
-            if selected_knowledge_base_id is not None:
-                bind_response = (
-                    api_utils.set_thread_knowledge_base(
-                        thread_id=thread_id,
-                        knowledge_base_id=selected_knowledge_base_id,
-                    )
-                )
-
-                if not bind_response.get("id"):
-                    # Avoid leaving a half-created Thread behind.
-                    api_utils.delete_thread(thread_id)
-
-                    st.session_state["thread"].id = None
-
-                    raise ValueError(
-                        "Failed to bind the selected "
-                        "knowledge base to the new thread."
-                    )
-
-        text = prompt
-        if text:
-            st.session_state["thread"].messages.append({"role": "human", "content": text})
-
-        if is_first_message:
-            update_thread(st.session_state["thread"].id, f"{text[:30]}")
-            update_user_threads()
-
-        with st.chat_message("human"):
-            st.markdown(text)
-
-        with st.chat_message("ai"):
-            steps_container = st.container()
-            answer_placeholder = st.empty()
-            full_response = ""
-
-            async def fetch_stream():
-                nonlocal full_response
-                try:
-                    chat_data = {
-                        "prompt": text,
-                        "model_name": st.session_state["model_name"],
-                        "top_k": st.session_state.get("top_k", 3),
-                        "similarity_threshold": st.session_state.get(
-                            "similarity_threshold",
-                            0.50,
-                        ),
-                        "rerank_top_n": st.session_state.get(
-                            "rerank_top_n",
-                            3,
-                        ),
-                    }
-                    async for line in api_utils.chat_stream(chat_data, st.session_state["thread"].id):
-                        try:
-                            event: dict = json.loads(line)
-                            event_type = event.get("type")
-
-                            if event_type == "tool_call":
-                                with steps_container:
-                                    tool_name = event.get(
-                                        "name",
-                                        "unknown",
-                                    )
-
-                                    tool_labels = {
-                                        "retrieve_user_documents": (
-                                            "📚 Searching knowledge base"
-                                        ),
-                                        "web_search": (
-                                            "🌐 Searching the web"
-                                        ),
-                                        "get_server_status": (
-                                            "🔌 Checking MCP service"
-                                        ),
-                                    }
-
-                                    tool_label = tool_labels.get(
-                                        tool_name,
-                                        f"🧰 Running {tool_name}",
-                                    )
-
-                                    st.markdown(
-                                        f"**{tool_label}**"
-                                    )
-
-                                    with st.expander(
-                                        "Tool input",
-                                        expanded=False,
-                                    ):
-                                        tool_args = event.get(
-                                            "args",
-                                            {},
-                                        )
-
-                                        if isinstance(
-                                            tool_args,
-                                            (dict, list),
-                                        ):
-                                            st.json(tool_args)
-                                        else:
-                                            st.code(
-                                                str(tool_args)
-                                            )
-
-                            elif event_type == "tool_result":
-                                with steps_container:
-                                    if event["name"] == "retrieve_user_documents":
-                                        rendered = _render_retrieval_result(
-                                            event["content"]
-                                        )
-
-                                        if not rendered:
-                                            with st.expander(
-                                                "**Tool Result:** "
-                                                "`retrieve_user_documents`",
-                                                expanded=False,
-                                            ):
-                                                st.code(
-                                                    event["content"],
-                                                    language="json",
-                                                )
-                                    elif event["name"] == "web_search":
-                                        rendered = _render_web_search_result(
-                                            event["content"]
-                                        )
-
-                                        if not rendered:
-                                            with st.expander(
-                                                "Web search result",
-                                                expanded=False,
-                                            ):
-                                                st.code(
-                                                    event["content"],
-                                                    language="json",
-                                                )
-
-                                    elif event.get("tool_source") == "mcp":
-                                        rendered = _render_mcp_tool_result(
-                                            event
-                                        )
-
-                                        if not rendered:
-                                            with st.expander(
-                                                f"**Tool Result:** `{event['name']}`",
-                                                expanded=False,
-                                            ):
-                                                st.code(
-                                                    event["content"],
-                                                    language="json",
-                                                )
-                                    else:
-                                        with st.expander(
-                                            f"**Tool Result:** `{event['name']}`",
-                                            expanded=False,
-                                        ):
-                                            st.code(
-                                                event["content"],
-                                                language="json",
-                                            )
-
-                            elif event_type == "llm_chunk":
-                                full_response += event.get("content", "")
-                                answer_placeholder.markdown(full_response + "▌")
-
-                            else:
-                                logger.warning(f"Unknown event type: {event_type}")
-                                st.warning(event)
-
-                        except (json.JSONDecodeError, KeyError) as e:
-                            logger.warning(f"Could not parse stream event: {line} - Error: {e}")
-
-                    answer_placeholder.markdown(full_response)
-                    if full_response:
-                        st.session_state["thread"].messages.append({"role": "ai", "content": full_response})
-
-                except Exception as e:
-                    st.error("An error occurred while processing your request.")
-                    logger.error(f"Error in fetch_stream: {e}")
-                    if is_first_message:
-                        api_utils.delete_thread(st.session_state["thread"].id)
-                        logger.info(f"Thread {st.session_state['thread'].id} deleted")
-                        new_chat()
-
-            with st.spinner("Generating response..."):
-                asyncio.run(fetch_stream())
 
 def _render_web_search_result(content: str) -> bool:
     """Render web search results in a user-friendly form."""
@@ -245,17 +35,13 @@ def _render_web_search_result(content: str) -> bool:
         return False
 
     if not results:
-        st.markdown(
-            "**🌐 Web search complete**"
-        )
+        ui.icon_label("Web search complete", "globe")
         st.caption(
             "No relevant public web sources were returned."
         )
         return True
 
-    st.markdown(
-        "**🌐 Web search complete**"
-    )
+    ui.icon_label("Web search complete", "globe")
 
     st.caption(
         f"{len(results)} public web source"
@@ -283,7 +69,7 @@ def _render_web_search_result(content: str) -> bool:
         score = result.get("score")
 
         with st.expander(
-            f"🌐 {index}. {title}",
+            f"{index}. {title}",
             expanded=False,
         ):
             if url:
@@ -338,7 +124,7 @@ def _render_mcp_tool_result(event: dict) -> bool:
     # ---------------------------------------------------------
     if success is True:
         st.markdown(
-            f"**🔌 MCP tool completed:** `{tool_name}`"
+            f"**MCP tool completed:** `{tool_name}`"
         )
 
         st.caption(
@@ -369,7 +155,7 @@ def _render_mcp_tool_result(event: dict) -> bool:
         )
 
         st.markdown(
-            f"**⚠️ MCP tool unavailable:** `{tool_name}`"
+            f"**MCP tool unavailable:** `{tool_name}`"
         )
 
         st.error(user_message)
@@ -388,7 +174,7 @@ def _render_mcp_tool_result(event: dict) -> bool:
 
     else:
         st.markdown(
-            f"**🔌 MCP tool finished:** `{tool_name}`"
+            f"**MCP tool finished:** `{tool_name}`"
         )
 
     # ---------------------------------------------------------
@@ -516,9 +302,7 @@ def _render_retrieval_result(content: str) -> bool:
     # User-facing retrieval status
     # ---------------------------------------------------------
     if status == "ok":
-        st.markdown(
-            "**📚 Knowledge base search complete**"
-        )
+        ui.icon_label("Knowledge base search complete", "book-open")
 
         st.caption(
             f"{retrieved_count} evidence chunk"
@@ -526,18 +310,14 @@ def _render_retrieval_result(content: str) -> bool:
         )
 
     elif status == "no_evidence":
-        st.markdown(
-            "**📚 Knowledge base search complete**"
-        )
+        ui.icon_label("Knowledge base search complete", "book-open")
 
         st.caption(
             "No reliable evidence was selected."
         )
 
     else:
-        st.markdown(
-            "**⚠️ Knowledge base search failed**"
-        )
+        ui.icon_label("Knowledge base search failed", "circle-alert")
 
     # ---------------------------------------------------------
     # Technical retrieval observability
@@ -653,7 +433,7 @@ def _render_retrieval_result(content: str) -> bool:
             )
 
             st.caption(
-                "Select a knowledge base from the sidebar "
+                "Select a knowledge base from the toolbar "
                 "if you want the Agent to answer from private documents."
             )
 
@@ -761,15 +541,15 @@ def _render_retrieval_result(content: str) -> bool:
             metadata_parts = []
 
             if page is not None:
-                metadata_parts.append(f"📄 Page: `{page}`")
+                metadata_parts.append(f"Page: `{page}`")
 
             if chunk_index is not None:
                 metadata_parts.append(
-                    f"🧩 Chunk: `{chunk_index}`"
+                    f"Chunk: `{chunk_index}`"
                 )
 
             metadata_parts.append(
-                f"🏷️ Rank: `{source_id}`"
+                f"Rank: `{source_id}`"
             )
 
             st.markdown(" · ".join(metadata_parts))
@@ -794,36 +574,5 @@ def _render_retrieval_result(content: str) -> bool:
     return True
 
 def unauthenticated_user_chat_interface_component():
-    for message in st.session_state["thread"].messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    if prompt := st.chat_input("Ask a question...", key="prompt"):
-        st.session_state["thread"].messages.append({"role": "human", "content": prompt})
-
-        with st.chat_message("human"):
-            st.markdown(prompt)
-
-        with st.chat_message("ai"):
-            placeholder = st.empty()
-            full_response = ""
-
-            async def fetch_stream():
-                nonlocal full_response
-                try:
-                    chat_data = {"prompt": prompt, "model_name": st.session_state["model_name"]}
-                    async for line in api_utils.simple_chat_stream(chat_data):
-                        try:
-                            chunk = json.loads(line).get("content")
-                            full_response += chunk
-                            placeholder.markdown(full_response + "▌")
-                        except (json.JSONDecodeError, KeyError) as e:
-                            logger.warning(f"Could not parse stream event: {line} - Error: {e}")
-
-                    placeholder.markdown(full_response)
-                    st.session_state["thread"].messages.append({"role": "ai", "content": full_response})
-                except Exception:
-                    st.error("An error occurred while processing your request. Please try again.")
-
-            with st.spinner("Generating response..."):
-                asyncio.run(fetch_stream())
+    from conversation_controller import chat_interface
+    chat_interface(authenticated=False)

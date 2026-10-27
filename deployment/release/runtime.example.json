@@ -1,0 +1,23 @@
+{
+  "_note": "Documentation only. manage.py prepare creates .private/runtime.json with random JWT/database credentials and reads existing model keys without printing them. This file is never mounted or used automatically.",
+  "CHAT_API_KEY": "",
+  "EMBEDDINGS_API_KEY": "",
+  "RERANK_API_KEY": "",
+  "TAVILY_API_KEY": "",
+  "JWT_SECRET": "",
+  "POSTGRES_PASSWORD": "",
+  "POSTGRES_HOST": "r1-postgres",
+  "POSTGRES_PORT": "5432",
+  "POSTGRES_USER": "r1_rag_user",
+  "POSTGRES_DATABASE": "langgraph_rag_bge_prod",
+  "PGVECTOR_COLLECTION_NAME": "bge_m3_1024_v1",
+  "MODEL_PROVIDER": "openai",
+  "MODEL_NAMES": "[\"deepseek-flash\"]",
+  "MODEL_BASE_URL": "https://api.deepseek.com",
+  "EMBEDDINGS_PROVIDER": "openai",
+  "EMBEDDINGS_MODEL_NAME": "BAAI/bge-m3",
+  "EMBEDDINGS_BASE_URL": "https://api.siliconflow.cn/v1",
+  "RERANK_MODEL_NAME": "BAAI/bge-reranker-v2-m3",
+  "RERANK_BASE_URL": "https://api.siliconflow.cn/v1",
+  "RERANK_PATH": "/rerank"
+}

@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
@@ -219,32 +219,26 @@ async def update_document_status(
     document_status: DocumentStatus,
     session: AsyncSession,
     error_message: str | None = None,
-) -> Document:
+) -> bool:
+    """Finish a processing document in a fresh short transaction.
+
+    A conditional Core UPDATE never flushes a stale ORM instance. Missing or
+    already-finished records are a normal no-op; deleted rows are not recreated.
+    The upload owns this session and has already committed its initial record.
     """
-    Update document indexing status.
-
-    processing -> ready
-    processing -> failed
-    """
-
-    document = await session.get(
-        Document,
-        document_id,
-    )
-
-    if document is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Document with ID {document_id} not found.",
+    await session.rollback()
+    try:
+        result = await session.execute(
+            update(Document.__table__)
+            .where(Document.id == document_id, Document.status == "processing")
+            .values(status=document_status, error_message=error_message)
         )
-
-    document.status = document_status
-    document.error_message = error_message
-
-    await session.commit()
-    await session.refresh(document)
-
-    return document
+        changed = result.rowcount == 1
+        await session.commit()
+        return changed
+    except Exception:
+        await session.rollback()
+        raise
 
 
 async def delete_document(

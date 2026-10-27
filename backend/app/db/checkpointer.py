@@ -36,7 +36,8 @@ async def get_checkpointer() -> AsyncPostgresSaver:
 
 
 async def close_connection() -> None:
-    global connection
+    global connection, checkpointer
+    checkpointer = None
 
     if connection is not None:
         logger.info("Closing checkpointer connection...")

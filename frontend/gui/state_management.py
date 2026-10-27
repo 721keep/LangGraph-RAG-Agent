@@ -108,34 +108,9 @@ def update_thread(thread_id: UUID, title: str):
     st.session_state["thread"].user_id = user_id
 
 
-def change_thread(thread_id: UUID) -> None:
-    get_thread_response = api_utils.get_thread(thread_id)
-
-    title = get_thread_response.get("title")
-    user_id = get_thread_response.get("user_id")
-    knowledge_base_id = get_thread_response.get(
-        "knowledge_base_id"
-    )
-
-    st.session_state["thread"] = Thread(
-        id=thread_id,
-        title=title,
-        user_id=user_id,
-        knowledge_base_id=(
-            UUID(knowledge_base_id)
-            if knowledge_base_id
-            else None
-        ),
-    )
-
-    if knowledge_base_id:
-        update_knowledge_base_document_list(
-            UUID(knowledge_base_id)
-        )
-    else:
-        st.session_state["thread"].documents = []
-
-    update_chat_history(thread_id)
+def change_thread(thread_id: UUID) -> bool:
+    from conversation_session import load_thread
+    return load_thread(thread_id)
 
 
 def update_document_list(thread_id: UUID) -> None:
@@ -163,6 +138,7 @@ def update_knowledge_base_document_list(
         st.sidebar.error(
             "Failed to retrieve knowledge base documents."
         )
+        return
     else:
         documents = documents_response
 
@@ -177,9 +153,12 @@ def update_user_knowledge_bases() -> list[dict]:
 
 
 def update_user_threads() -> list[dict]:
-    threads = api_utils.get_user_threads()
-    st.session_state["user"].threads = threads
-    return threads
+    result = api_utils.get_user_threads(detailed=True)
+    if result["ok"]:
+        st.session_state["user"].threads = result["data"]
+    else:
+        st.session_state["chat_history_error"] = result["message"]
+    return st.session_state["user"].threads
 
 
 def update_chat_history(thread_id: UUID) -> None:

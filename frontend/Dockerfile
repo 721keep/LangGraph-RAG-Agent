@@ -14,6 +14,7 @@ COPY requirements.txt .
 RUN uv pip install --system --no-cache-dir -r requirements.txt
 
 COPY ./gui/ ./gui/
+COPY ./.streamlit/ ./.streamlit/
 
 EXPOSE 8501
 

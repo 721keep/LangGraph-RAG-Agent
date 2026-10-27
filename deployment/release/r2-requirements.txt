@@ -1,0 +1,6 @@
+# Additional official-counter dependencies; versions verified in the R2 image.
+filelock==4.2.4
+fsspec==2026.9.0
+hf-xet==1.7.0
+huggingface_hub==1.33.0
+tokenizers==0.22.1

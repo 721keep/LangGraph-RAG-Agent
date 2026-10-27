@@ -1,0 +1,16 @@
+**
+!frontend/
+!frontend/requirements.txt
+!frontend/gui/
+!frontend/gui/**
+!frontend/.streamlit/
+!frontend/.streamlit/config.toml
+!deployment/
+!deployment/release/
+!deployment/release/frontend.constraints.txt
+**/__pycache__/
+**/*.pyc
+**/.env
+**/.env.*
+**/.private/
+**/.streamlit/secrets.toml

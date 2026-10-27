@@ -9,6 +9,83 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 BASE_URL = settings.backend_base_url
 TIMEOUT = 30
+UPLOAD_TIMEOUT = (settings.document_upload_connect_timeout, settings.document_upload_read_timeout)
+
+from runtime_errors import MESSAGES as RUNTIME_ERROR_MESSAGES
+
+UPLOAD_ERROR_MESSAGES = {
+    **RUNTIME_ERROR_MESSAGES,
+    "embedding_quota_exhausted": "Embedding 额度不足，请联系管理员检查服务额度。",
+    "embedding_auth_failed": "Embedding 服务鉴权失败，请联系管理员检查凭据与访问权限。",
+    "embedding_failed": "Embedding 服务调用失败，文档尚未完成索引。",
+    "pdf_parse_failed": "PDF 解析失败，请检查文件是否损坏、加密或不含可提取的文本。",
+    "document_parse_failed": "文档解析失败，请检查文件内容及格式。",
+    "vector_write_failed": "向量写入失败，请联系管理员检查向量数据库。",
+    "document_status_failed": "文档状态保存失败，请刷新列表确认处理结果。",
+    "document_save_failed": "上传文件或文档记录保存失败，请刷新列表确认。",
+    "document_unavailable": "文档已被删除或状态已改变，本次上传未标记为就绪。",
+    "upload_auth_failed": "上传请求鉴权失败，请重新登录或检查访问权限。",
+    "upload_http_failed": "服务器拒绝或未能完成上传，请刷新文档列表查看状态。",
+    "upload_timeout": "上传等待超时，处理结果待确认；后端可能仍在处理。请刷新列表，勿直接重复上传。",
+    "upload_network_failed": "上传连接中断，处理结果待确认。请刷新列表，勿直接重复上传。",
+    "upload_result_unknown": "未能确认上传结果，请刷新文档列表查看状态。",
+}
+
+
+def _post_document_upload(url: str, file: UploadedFile) -> dict:
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {st.session_state['user'].access_token}",
+    }
+    try:
+        response = requests.post(
+            url,
+            files={"file": (file.name, file.getvalue(), file.type)},
+            headers=headers,
+            timeout=UPLOAD_TIMEOUT,
+        )
+        response.raise_for_status()
+        result = response.json()
+        if isinstance(result, dict) and result.get("status") == "ready" and result.get("document_id"):
+            return result
+        code = "upload_result_unknown"
+    except requests.exceptions.HTTPError as error:
+        response = error.response
+        try:
+            body = response.json()
+            detail = body.get("detail", {}) if isinstance(body, dict) else {}
+        except ValueError:
+            detail = {}
+        detail = detail if isinstance(detail, dict) else {}
+        code = detail.get("error_code")
+        if not isinstance(code, str) or code not in UPLOAD_ERROR_MESSAGES:
+            code = "upload_auth_failed" if response.status_code in (401, 403) else "upload_http_failed"
+        return {
+            "status": "unknown" if detail.get("status") == "unknown" else "failed",
+            "document_id": detail.get("document_id"),
+            "error_code": code,
+            "message": UPLOAD_ERROR_MESSAGES[code],
+        }
+    except requests.exceptions.Timeout:
+        code = "upload_timeout"
+    except requests.exceptions.RequestException:
+        code = "upload_network_failed"
+    except Exception:
+        code = "upload_result_unknown"
+    # A lost response cannot prove that the backend stopped. Never retry here.
+    logger.warning("Upload result uncertain: code={}", code)
+    return {"status": "unknown", "error_code": code, "message": UPLOAD_ERROR_MESSAGES[code]}
+
+
+def document_failure_message(document: dict) -> str:
+    """Only display safe, recognized errors, including for historical records."""
+    raw = document.get("error_message") or ""
+    code = raw.split(":", 1)[0].strip()
+    if code in UPLOAD_ERROR_MESSAGES:
+        return UPLOAD_ERROR_MESSAGES[code]
+    if "AllocationQuota.FreeTierOnly" in raw or "Free quota exhausted" in raw:
+        return UPLOAD_ERROR_MESSAGES["embedding_quota_exhausted"]
+    return "文档处理失败，未提供可安全展示的具体原因。"
 
 ## Auth --------------------------------------------------------------------
 
@@ -121,6 +198,16 @@ async def simple_chat_stream(chat_data: dict):
                     if line:
                         yield line
         except httpx.HTTPStatusError as e:
+            await e.response.aread()
+            try:
+                code = e.response.json().get('detail', {}).get('error_code')
+            except (ValueError, AttributeError):
+                code = None
+            from runtime_errors import MESSAGES
+            if isinstance(code, str) and code in MESSAGES:
+                import json
+                yield json.dumps({'type': 'error', 'code': code})
+                return
             raise Exception(
                 f"Chat server responded with error: {e.response.status_code} {e.response.reason_phrase}"
             ) from e
@@ -150,6 +237,16 @@ async def chat_stream(chat_data: dict, thread_id: UUID):
                     if line:
                         yield line
         except httpx.HTTPStatusError as e:
+            await e.response.aread()
+            try:
+                code = e.response.json().get('detail', {}).get('error_code')
+            except (ValueError, AttributeError):
+                code = None
+            from runtime_errors import MESSAGES
+            if isinstance(code, str) and code in MESSAGES:
+                import json
+                yield json.dumps({'type': 'error', 'code': code})
+                return
             raise Exception(
                 f"Chat server responded with error: {e.response.status_code} {e.response.reason_phrase}"
             ) from e
@@ -157,7 +254,7 @@ async def chat_stream(chat_data: dict, thread_id: UUID):
             raise Exception(f"Failed to connect to chat server: {str(e)}") from e
 
 
-def get_chat_history(thread_id: UUID) -> list | dict:
+def get_chat_history(thread_id: UUID, *, detailed: bool = False) -> list | dict:
     """
     Retrieves the chat history for a specific s ID.
 
@@ -167,6 +264,10 @@ def get_chat_history(thread_id: UUID) -> list | dict:
     Returns:
         A list of chat history messages.
     """
+    if detailed:
+        from resource_api import request
+        return request("get", f"/chat/{thread_id}", expected=list)
+
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {st.session_state['user'].access_token}",
@@ -225,7 +326,7 @@ def create_new_thread() -> dict:
         return {}
 
 
-def get_thread(thread_id: UUID) -> dict:
+def get_thread(thread_id: UUID, *, detailed: bool = False) -> dict:
     """
     Retrieves a specific thread from the API.
 
@@ -235,6 +336,10 @@ def get_thread(thread_id: UUID) -> dict:
     Returns:
         A dictionary containing the API response JSON.
     """
+
+    if detailed:
+        from resource_api import request
+        return request("get", f"/threads/{thread_id}", expected=dict, required_fields=("id",))
 
     headers = {
         "Accept": "application/json",
@@ -260,13 +365,17 @@ def get_thread(thread_id: UUID) -> dict:
         return {}
 
 
-def get_user_threads() -> list:
+def get_user_threads(*, detailed: bool = False) -> list | dict:
     """
     Retrieves the user's threads from the API.
 
     Returns:
         A dictionary containing the API response JSON.
     """
+
+    if detailed:
+        from resource_api import request
+        return request("get", "/threads/", expected=list)
 
     headers = {
         "Accept": "application/json",
@@ -366,322 +475,61 @@ def delete_thread(thread_id: UUID) -> dict:
 ## Knowledge Bases ----------------------------------------------------------
 
 
-def get_knowledge_bases() -> list:
-    """Get all knowledge bases owned by the current user."""
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    try:
-        response = requests.get(
-            f"{BASE_URL}/knowledge-bases/",
-            headers=headers,
-            timeout=TIMEOUT,
-        )
-        response.raise_for_status()
-        return response.json()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            "Get knowledge bases failed with status "
-            f"{e.response.status_code}. Response: {e.response.text}"
-        )
-        return []
-
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Get knowledge bases failed with RequestError: {str(e)}"
-        )
-        return []
-
-    except Exception as e:
-        logger.error(
-            "Get knowledge bases failed with an unexpected exception: "
-            f"{str(e)}"
-        )
-        return []
+def get_knowledge_bases(*, detailed: bool = False) -> list | dict:
+    """List owned KBs; detailed results preserve failures without emptying UI state."""
+    from resource_api import request
+    result = request("get", "/knowledge-bases/", expected=list)
+    return result if detailed else (result["data"] if result["ok"] else [])
 
 
 def create_knowledge_base(
     name: str,
     description: str | None = None,
+    *, detailed: bool = False,
 ) -> dict:
-    """Create a new knowledge base."""
-
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    data = {
-        "name": name,
-        "description": description,
-    }
-
-    try:
-        response = requests.post(
-            f"{BASE_URL}/knowledge-bases/",
-            json=data,
-            headers=headers,
-            timeout=TIMEOUT,
-        )
-        response.raise_for_status()
-        return response.json()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            "Create knowledge base failed with status "
-            f"{e.response.status_code}. Response: {e.response.text}"
-        )
-        return {}
-
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Create knowledge base failed with RequestError: {str(e)}"
-        )
-        return {}
-
-    except Exception as e:
-        logger.error(
-            "Create knowledge base failed with an unexpected exception: "
-            f"{str(e)}"
-        )
-        return {}
+    from resource_api import request
+    result = request("post", "/knowledge-bases/", data={"name": name, "description": description}, expected=dict, required_fields=("id",))
+    return result if detailed else (result["data"] if result["ok"] else {})
 
 
-def delete_knowledge_base(knowledge_base_id: UUID) -> bool:
-    """Delete one knowledge base."""
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    try:
-        response = requests.delete(
-            f"{BASE_URL}/knowledge-bases/{knowledge_base_id}",
-            headers=headers,
-            timeout=TIMEOUT,
-        )
-        response.raise_for_status()
-        return True
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            "Delete knowledge base failed with status "
-            f"{e.response.status_code}. Response: {e.response.text}"
-        )
-        return False
-
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            f"Delete knowledge base failed with RequestError: {str(e)}"
-        )
-        return False
-
-    except Exception as e:
-        logger.error(
-            "Delete knowledge base failed with an unexpected exception: "
-            f"{str(e)}"
-        )
-        return False
+def delete_knowledge_base(knowledge_base_id: UUID, *, detailed: bool = False) -> bool | dict:
+    from resource_api import request
+    result = request("delete", f"/knowledge-bases/{knowledge_base_id}")
+    return result if detailed else result["ok"]
 
 
 def set_thread_knowledge_base(
     thread_id: UUID,
     knowledge_base_id: UUID | None,
+    *, detailed: bool = False,
 ) -> dict:
-    """Bind, switch, or unbind a knowledge base for a thread."""
-
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    data = {
-        "knowledge_base_id": (
-            str(knowledge_base_id)
-            if knowledge_base_id is not None
-            else None
-        )
-    }
-
-    try:
-        response = requests.patch(
-            f"{BASE_URL}/threads/{thread_id}/knowledge-base",
-            json=data,
-            headers=headers,
-            timeout=TIMEOUT,
-        )
-        response.raise_for_status()
-        return response.json()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            "Set thread knowledge base failed with status "
-            f"{e.response.status_code}. Response: {e.response.text}"
-        )
-        return {}
-
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            "Set thread knowledge base failed with RequestError: "
-            f"{str(e)}"
-        )
-        return {}
-
-    except Exception as e:
-        logger.error(
-            "Set thread knowledge base failed with an unexpected exception: "
-            f"{str(e)}"
-        )
-        return {}
-
-## Documents ----------------------------------------------------------
+    from resource_api import request
+    result = request("patch", f"/threads/{thread_id}/knowledge-base",
+                     data={"knowledge_base_id": str(knowledge_base_id) if knowledge_base_id else None}, expected=dict, required_fields=("id",))
+    return result if detailed else (result["data"] if result["ok"] else {})
 
 
 def upload_knowledge_base_document(
     knowledge_base_id: UUID,
     file: UploadedFile,
-) -> dict | None:
-    """Upload a document into a knowledge base."""
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    try:
-        files = {
-            "file": (
-                file.name,
-                file.getvalue(),
-                file.type,
-            )
-        }
-
-        response = requests.post(
-            (
-                f"{BASE_URL}/documents/knowledge-bases/"
-                f"{knowledge_base_id}/upload"
-            ),
-            files=files,
-            headers=headers,
-            timeout=TIMEOUT,
-        )
-        response.raise_for_status()
-
-        return response.json()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            "Knowledge base document upload failed with status "
-            f"{e.response.status_code}. Response: {e.response.text}"
-        )
-        return {}
-
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            "Knowledge base document upload failed with RequestError: "
-            f"{str(e)}"
-        )
-        return None
-
-    except Exception as e:
-        logger.error(
-            "Knowledge base document upload failed with unexpected error: "
-            f"{str(e)}"
-        )
-        return None
+) -> dict:
+    """Upload with a dedicated timeout and an explicit ready/failed/unknown result."""
+    return _post_document_upload(
+        f"{BASE_URL}/documents/knowledge-bases/{knowledge_base_id}/upload", file,
+    )
 
 
 def list_knowledge_base_documents(
     knowledge_base_id: UUID,
-) -> list | None:
-    """List documents belonging to a knowledge base."""
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    try:
-        response = requests.get(
-            (
-                f"{BASE_URL}/documents/knowledge-bases/"
-                f"{knowledge_base_id}"
-            ),
-            headers=headers,
-            timeout=TIMEOUT,
-        )
-        response.raise_for_status()
-
-        return response.json()
-
-    except requests.exceptions.HTTPError as e:
-        logger.error(
-            "List knowledge base documents failed with status "
-            f"{e.response.status_code}. Response: {e.response.text}"
-        )
-        return None
-
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            "List knowledge base documents failed with RequestError: "
-            f"{str(e)}"
-        )
-        return None
-
-    except Exception as e:
-        logger.error(
-            "List knowledge base documents failed with unexpected error: "
-            f"{str(e)}"
-        )
-        return None
+    *, detailed: bool = False,
+) -> list | dict | None:
+    from resource_api import request
+    result = request("get", f"/documents/knowledge-bases/{knowledge_base_id}", expected=list)
+    return result if detailed else (result["data"] if result["ok"] else None)
 
 
-def upload_document(thread_id: UUID, file: UploadedFile) -> dict | None:
-    """
-    Uploads a document to the API.
-
-    Args:
-        file: The UploadedFile object from Streamlit.
-
-    Returns:
-        A dictionary containing the API response JSON if successful, or None otherwise.
-    """
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    logger.info(f"Starting document upload for file: {file.name}")
-    try:
-        files = {"file": (file.name, file.getvalue(), file.type)}
-
-        response = requests.post(
-            f"{BASE_URL}/documents/upload/{thread_id}", files=files, headers=headers, timeout=TIMEOUT
-        )
-        response.raise_for_status()
-
-        logger.info(f"Successfully uploaded file: {file.name}")
-        return response.json()
-    except requests.exceptions.HTTPError as e:
-        logger.error(f"Upload failed with status {e.response.status_code}. Response: {e.response.text}")
-        if e.response.status_code in [400, 401]:
-            return e.response.json()
-        return {}
-    except requests.exceptions.RequestException as e:
-        logger.error(f"File upload failed with RequestError: {str(e)}")
-        return None
-    except Exception as e:
-        logger.error(f"File upload failed with an unexpected exception: {str(e)}")
-        return None
+def upload_document(thread_id: UUID, file: UploadedFile) -> dict:
+    return _post_document_upload(f"{BASE_URL}/documents/upload/{thread_id}", file)
 
 
 def list_document(thread_id: UUID) -> list | None:
@@ -714,36 +562,8 @@ def list_document(thread_id: UUID) -> list | None:
         return None
 
 
-def delete_document(document_id: str) -> bool:
-    """
-    Deletes a document from the API using its file ID.
-
-    Args:
-        document_id: The ID of the file to delete.
-
-    Returns:
-        True if deletion was successful, False otherwise.
-    """
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {st.session_state['user'].access_token}",
-    }
-
-    try:
-        response = requests.delete(f"{BASE_URL}/documents/{document_id}", headers=headers, timeout=TIMEOUT)
-        response.raise_for_status()
-
-        logger.info(f"Successfully deleted document with ID: {document_id}")
-        return True
-    except requests.exceptions.HTTPError as e:
-        logger.error(f"Delete document failed with status {e.response.status_code}. Response: {e.response.text}")
-        if e.response.status_code in [401, 403, 404]:
-            return e.response.json()
-        return False
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Delete document failed with RequestError: {str(e)}")
-        return False
-    except Exception as e:
-        logger.error(f"Delete document failed with an unexpected exception: {str(e)}")
-        return False
+def delete_document(document_id: str, *, detailed: bool = False) -> bool | dict:
+    """Errors return False for legacy callers; detailed callers receive safe context."""
+    from resource_api import request
+    result = request("delete", f"/documents/{document_id}")
+    return result if detailed else result["ok"]
